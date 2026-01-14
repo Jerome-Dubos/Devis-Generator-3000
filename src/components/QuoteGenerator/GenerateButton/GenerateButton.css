@@ -1,0 +1,140 @@
+.generate-button-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  align-items: center;
+  width: 100%;
+}
+
+.pdf-theme-selector {
+  width: 100%;
+  padding: var(--spacing-lg);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--glass-shadow);
+}
+
+.pdf-theme-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.pdf-theme-radio-group {
+  display: flex;
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-sm);
+}
+
+.pdf-theme-radio {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  transition: color var(--transition-normal);
+}
+
+.pdf-theme-radio:hover {
+  color: var(--accent-gold);
+}
+
+.pdf-theme-radio input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--accent-gold);
+}
+
+.pdf-theme-radio input[type="radio"]:checked + span {
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
+.pdf-theme-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: var(--spacing-sm) 0 0 0;
+  font-style: italic;
+}
+
+.generate-pdf-button {
+  min-width: 250px;
+  font-size: 1.125rem;
+  padding: var(--spacing-lg) var(--spacing-2xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.generate-pdf-button::before {
+  background: var(--accent-gold-gradient);
+  opacity: 0.2;
+}
+
+.generate-pdf-button:hover::before {
+  opacity: 0.3;
+}
+
+.generate-error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: var(--border-radius-md);
+  color: var(--color-error);
+  font-size: 0.875rem;
+  max-width: 400px;
+  text-align: center;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-icon {
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.error-message {
+  flex: 1;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animation de succès */
+.generate-pdf-button.success {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.generate-pdf-button.success::before {
+  opacity: 0;
+}

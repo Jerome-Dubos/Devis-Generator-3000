@@ -1,0 +1,200 @@
+.quote-lines {
+  width: 100%;
+}
+
+.quote-lines-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-xl);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.quote-lines-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.quote-line {
+  padding: var(--spacing-lg);
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px) saturate(180%);
+  -webkit-backdrop-filter: blur(8px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-lg);
+  transition: all var(--transition-normal);
+}
+
+.quote-line:hover {
+  border-color: var(--glass-gold-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.quote-line-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.line-number {
+  font-weight: 600;
+  color: var(--accent-gold);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.remove-line-btn {
+  opacity: 0.7;
+  transition: opacity var(--transition-normal);
+}
+
+.remove-line-btn:hover {
+  opacity: 1;
+}
+
+.quote-line-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+.quote-line-description {
+  grid-column: 1;
+}
+
+.quote-line-total {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding-top: calc(var(--spacing-md) + 4px);
+}
+
+.line-total-display {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+  padding: var(--spacing-md);
+  background: var(--glass-bg);
+  border-radius: var(--border-radius-md);
+  text-align: center;
+}
+
+/* Totaux */
+.quote-totals {
+  margin-top: var(--spacing-2xl);
+  padding-top: var(--spacing-xl);
+  border-top: 2px solid var(--glass-gold-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+}
+
+.total-label {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.total-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.total-row--final {
+  padding-top: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+  border-top: 1px solid var(--glass-border);
+}
+
+.total-value--final {
+  font-size: 1.5rem;
+  color: var(--accent-gold);
+  font-weight: 700;
+}
+
+/* Répartition TVA */
+.vat-breakdown {
+  margin: var(--spacing-md) 0;
+  padding: var(--spacing-md);
+  background: var(--glass-bg);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--glass-border);
+}
+
+.vat-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.vat-breakdown-row:last-child {
+  border-bottom: none;
+}
+
+.vat-breakdown-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+}
+
+.vat-breakdown-amounts {
+  display: flex;
+  gap: var(--spacing-md);
+  font-size: 0.875rem;
+}
+
+.vat-breakdown-ht,
+.vat-breakdown-vat {
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .quote-line-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .quote-line-description {
+    grid-column: 1 / -1;
+  }
+
+  .quote-line-total {
+    grid-column: 1 / -1;
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .quote-lines-header {
+    flex-direction: column;
+  }
+
+  .quote-line-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-line-description {
+    grid-column: 1;
+  }
+
+  .quote-line-total {
+    grid-column: 1;
+  }
+}

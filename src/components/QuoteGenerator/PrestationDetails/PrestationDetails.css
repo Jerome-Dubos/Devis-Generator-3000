@@ -1,0 +1,33 @@
+.prestation-details {
+  width: 100%;
+}
+
+.prestation-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-lg);
+}
+
+.textarea-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.textarea-wrapper .glass-input {
+  min-height: 120px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+@media (max-width: 1024px) {
+  .prestation-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .prestation-details-grid {
+    gap: var(--spacing-md);
+  }
+}

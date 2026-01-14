@@ -1,0 +1,29 @@
+.quote-details {
+  width: 100%;
+}
+
+.quote-details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 1024px) {
+  .quote-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-details-textareas {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .quote-details-grid {
+    gap: var(--spacing-md);
+  }
+
+  .quote-details-textareas {
+    gap: var(--spacing-md);
+  }
+}

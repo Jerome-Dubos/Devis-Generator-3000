@@ -1,0 +1,15 @@
+.prestation-info {
+  width: 100%;
+}
+
+.prestation-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+  .prestation-form-grid {
+    gap: var(--spacing-md);
+  }
+}

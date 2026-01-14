@@ -1,0 +1,86 @@
+/* Mode Sombre - Palette Dorée Chic & Élégante */
+
+[data-theme="dark"] {
+  /* Couleurs de fond */
+  --bg-primary: #0A0A0A;
+  --bg-secondary: #121212;
+  --bg-tertiary: #1A1A1A;
+  --bg-gradient: linear-gradient(135deg, #0A0A0A 0%, #121212 50%, #1A1A1A 100%);
+  --bg-gradient-shine: linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(18, 18, 18, 0.8) 50%, rgba(10, 10, 10, 1) 100%);
+  
+  /* Accents dorés */
+  --accent-gold: #D4AF37;
+  --accent-gold-light: #FFD700;
+  --accent-gold-dark: #B8941F;
+  --accent-gold-gradient: linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #FFA500 100%);
+  
+  /* Couleurs de texte */
+  --text-primary: #F5F5F5;
+  --text-secondary: #E5E5E5;
+  --text-muted: #B3B3B3;
+  --text-inverse: #0A0A0A;
+  
+  /* Glassmorphisme */
+  --glass-bg: rgba(0, 0, 0, 0.4);
+  --glass-bg-hover: rgba(0, 0, 0, 0.5);
+  --glass-border: rgba(255, 215, 0, 0.2);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  --glass-shadow-hover: 0 12px 40px 0 rgba(0, 0, 0, 0.6);
+  
+  /* Accents dorés pour glassmorphisme */
+  --glass-gold-border: rgba(212, 175, 55, 0.4);
+  --glass-gold-glow: rgba(212, 175, 55, 0.3);
+  
+  /* États */
+  --color-success: #4ECDC4;
+  --color-warning: #FFD93D;
+  --color-error: #FF6B6B;
+  --color-info: #667eea;
+  
+  /* Ombres */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.4);
+  
+  /* Bordures */
+  --border-radius-sm: 0.5rem;
+  --border-radius-md: 0.75rem;
+  --border-radius-lg: 1rem;
+  --border-radius-xl: 1.5rem;
+  --border-radius-2xl: 2rem;
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+[data-theme="dark"] body {
+  background: var(--bg-gradient);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+[data-theme="dark"] .glass-effect {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+[data-theme="dark"] .glass-effect:hover {
+  background: var(--glass-bg-hover);
+  box-shadow: var(--glass-shadow-hover);
+  border-color: var(--glass-gold-border);
+}
+
+[data-theme="dark"] .glass-gold {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid var(--glass-gold-border);
+  box-shadow: var(--glass-shadow), var(--glass-gold-glow) 0 0 30px;
+}
