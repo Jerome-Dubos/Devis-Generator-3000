@@ -15,14 +15,25 @@ const initialQuoteData = {
   // Informations émetteur
   sender: {
     name: '',
+    legalForm: '', // Forme juridique (SARL, SAS, EI, etc.)
+    commercialName: '', // Nom commercial (si différent)
     address: '',
     postalCode: '',
     city: '',
     phone: '',
     email: '',
-    siret: '',
+    siren: '', // SIREN (9 chiffres)
+    siret: '', // SIRET complet (14 chiffres)
+    rcs: '', // Numéro RCS (ex: RCS Paris B 123 456 789)
+    vatNumber: '', // Numéro de TVA intracommunautaire (ex: FR12345678901)
     logo: null,
     logoUrl: null, // URL de l'image pour affichage
+    complaintsContact: { // Contact pour réclamations
+      name: '',
+      address: '',
+      email: '',
+      phone: '',
+    },
   },
   // Informations client
   client: {
@@ -38,27 +49,46 @@ const initialQuoteData = {
     title: '',
     object: '',
     participants: '',
+    startDate: '', // Date de début de la prestation
+    estimatedDuration: '', // Durée estimée (ex: "3 mois", "15 jours")
+    deliveryConditions: '', // Conditions de livraison/exécution
   },
   // Détails du devis
   quoteDetails: {
     quoteNumber: '',
     issueDate: new Date().toISOString().split('T')[0],
     validityDate: '',
+    isFree: true, // Devis gratuit ou payant
+    paymentConditions: '', // Conditions de paiement détaillées
+  },
+  // Taxe et TVA
+  taxSettings: {
+    vatApplicable: true, // TVA applicable ou non
+    vatExemptionReason: '', // Raison d'exemption si applicable
+  },
+  // Garanties et service après-vente
+  guarantees: {
+    legalWarranty: true, // Garantie légale de conformité
+    hiddenDefectsWarranty: true, // Garantie des vices cachés
+    afterSalesService: '', // Service après-vente
+    warrantyDuration: '', // Durée de garantie si applicable
   },
   // Lignes de devis
   lines: [],
-  // Déroulé de la prestation
-  prestationDetails: {
-    petitDejeuner: '',
-    plateauxRepas: '',
-    boissons: '',
-    serviceLivraison: '',
-  },
+  // Déroulé de la prestation (tableau dynamique)
+  prestationDetails: [],
   // Conditions légales
   legalConditions: {
-    accompte: '',
-    decharge: '',
-    mentionsLegales: '',
+    accompte: {
+      montant: '',
+      solde: '',
+      modalites: '',
+    },
+    decharge: {
+      date: '',
+      delai: '',
+    },
+    mentionsLegales: [],
   },
 };
 
@@ -114,24 +144,91 @@ export const QuoteProvider = ({ children }) => {
     }));
   }, []);
 
-  // Mettre à jour le déroulé de la prestation
-  const updatePrestationDetails = useCallback((field, value) => {
+  // Ajouter une section de prestation
+  const addPrestationDetail = useCallback(() => {
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const newSection = {
+      id: uniqueId,
+      label: `Section ${quoteData.prestationDetails.length + 1}`,
+      content: '',
+    };
     setQuoteData((prev) => ({
       ...prev,
-      prestationDetails: {
-        ...prev.prestationDetails,
-        [field]: value,
-      },
+      prestationDetails: [...prev.prestationDetails, newSection],
+    }));
+    return newSection.id;
+  }, [quoteData.prestationDetails.length]);
+
+  // Supprimer une section de prestation
+  const removePrestationDetail = useCallback((sectionId) => {
+    setQuoteData((prev) => ({
+      ...prev,
+      prestationDetails: prev.prestationDetails.filter((section) => section.id !== sectionId),
+    }));
+  }, []);
+
+  // Mettre à jour une section de prestation
+  const updatePrestationDetail = useCallback((sectionId, field, value) => {
+    setQuoteData((prev) => ({
+      ...prev,
+      prestationDetails: prev.prestationDetails.map((section) =>
+        section.id === sectionId ? { ...section, [field]: value } : section
+      ),
     }));
   }, []);
 
   // Mettre à jour les conditions légales
-  const updateLegalConditions = useCallback((field, value) => {
+  const updateLegalConditions = useCallback((section, field, value) => {
     setQuoteData((prev) => ({
       ...prev,
       legalConditions: {
         ...prev.legalConditions,
-        [field]: value,
+        [section]: {
+          ...prev.legalConditions[section],
+          [field]: value,
+        },
+      },
+    }));
+  }, []);
+
+  // Ajouter une mention légale
+  const addLegalMention = useCallback(() => {
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const newMention = {
+      id: uniqueId,
+      title: '',
+      content: '',
+    };
+    setQuoteData((prev) => ({
+      ...prev,
+      legalConditions: {
+        ...prev.legalConditions,
+        mentionsLegales: [...prev.legalConditions.mentionsLegales, newMention],
+      },
+    }));
+    return newMention.id;
+  }, []);
+
+  // Supprimer une mention légale
+  const removeLegalMention = useCallback((mentionId) => {
+    setQuoteData((prev) => ({
+      ...prev,
+      legalConditions: {
+        ...prev.legalConditions,
+        mentionsLegales: prev.legalConditions.mentionsLegales.filter((mention) => mention.id !== mentionId),
+      },
+    }));
+  }, []);
+
+  // Mettre à jour une mention légale
+  const updateLegalMention = useCallback((mentionId, field, value) => {
+    setQuoteData((prev) => ({
+      ...prev,
+      legalConditions: {
+        ...prev.legalConditions,
+        mentionsLegales: prev.legalConditions.mentionsLegales.map((mention) =>
+          mention.id === mentionId ? { ...mention, [field]: value } : mention
+        ),
       },
     }));
   }, []);
@@ -153,6 +250,28 @@ export const QuoteProvider = ({ children }) => {
       ...prev,
       quoteDetails: {
         ...prev.quoteDetails,
+        [field]: value,
+      },
+    }));
+  }, []);
+
+  // Mettre à jour les paramètres de TVA
+  const updateTaxSettings = useCallback((field, value) => {
+    setQuoteData((prev) => ({
+      ...prev,
+      taxSettings: {
+        ...prev.taxSettings,
+        [field]: value,
+      },
+    }));
+  }, []);
+
+  // Mettre à jour les garanties
+  const updateGuarantees = useCallback((field, value) => {
+    setQuoteData((prev) => ({
+      ...prev,
+      guarantees: {
+        ...prev.guarantees,
         [field]: value,
       },
     }));
@@ -223,8 +342,15 @@ export const QuoteProvider = ({ children }) => {
     updateClient,
     updateQuoteDetails,
     updatePrestation,
-    updatePrestationDetails,
+    addPrestationDetail,
+    removePrestationDetail,
+    updatePrestationDetail,
     updateLegalConditions,
+    addLegalMention,
+    removeLegalMention,
+    updateLegalMention,
+    updateTaxSettings,
+    updateGuarantees,
     addLine,
     removeLine,
     updateLine,

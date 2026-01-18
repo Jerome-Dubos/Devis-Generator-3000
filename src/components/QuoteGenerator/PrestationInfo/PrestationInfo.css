@@ -4,8 +4,18 @@
 
 .prestation-form-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--spacing-lg);
+}
+
+.prestation-delivery-conditions.full-width {
+  grid-column: 1 / -1;
+}
+
+.prestation-delivery-conditions .glass-input {
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
 }
 
 @media (max-width: 768px) {

@@ -3,16 +3,24 @@ import { useQuote } from '../../../contexts/QuoteContext';
 import GlassCard from '../../GlassCard/GlassCard';
 import GlassInput from '../../GlassInput/GlassInput';
 import GlassButton from '../../GlassButton/GlassButton';
-import { FaUpload, FaTimes } from 'react-icons/fa';
+import { FaUpload, FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import './SenderInfo.css';
 
 const SenderInfo = () => {
   const { quoteData, updateSender, updateLogo } = useQuote();
   const { sender } = quoteData;
+  const [showAdvanced, setShowAdvanced] = React.useState(false);
   const fileInputRef = useRef(null);
 
   const handleChange = (field) => (e) => {
     updateSender(field, e.target.value);
+  };
+
+  const handleComplaintsContactChange = (field) => (e) => {
+    updateSender('complaintsContact', {
+      ...sender.complaintsContact,
+      [field]: e.target.value,
+    });
   };
 
   const handleLogoChange = (e) => {
@@ -28,6 +36,20 @@ const SenderInfo = () => {
       fileInputRef.current.value = '';
     }
   };
+
+  const legalForms = [
+    'SARL',
+    'SAS',
+    'SASU',
+    'SA',
+    'EURL',
+    'SNC',
+    'SCI',
+    'EI (Entrepreneur Individuel)',
+    'Auto-entrepreneur',
+    'Association',
+    'Autre',
+  ];
 
   return (
     <GlassCard variant="gold" className="sender-info">
@@ -71,15 +93,36 @@ const SenderInfo = () => {
 
       <div className="sender-form-grid">
         <GlassInput
-          label="Nom / Raison sociale"
+          label="Raison sociale *"
           value={sender.name}
           onChange={handleChange('name')}
-          placeholder="Votre nom ou raison sociale"
+          placeholder="Nom de votre entreprise"
           required
         />
 
         <GlassInput
-          label="Adresse"
+          label="Forme juridique"
+          type="text"
+          value={sender.legalForm}
+          onChange={handleChange('legalForm')}
+          placeholder="Ex: SARL, SAS, EI, etc."
+          list="legal-forms"
+        />
+        <datalist id="legal-forms">
+          {legalForms.map((form) => (
+            <option key={form} value={form} />
+          ))}
+        </datalist>
+
+        <GlassInput
+          label="Nom commercial (si différent)"
+          value={sender.commercialName}
+          onChange={handleChange('commercialName')}
+          placeholder="Nom commercial"
+        />
+
+        <GlassInput
+          label="Adresse du siège social *"
           value={sender.address}
           onChange={handleChange('address')}
           placeholder="Numéro et nom de rue"
@@ -109,21 +152,102 @@ const SenderInfo = () => {
         />
 
         <GlassInput
-          label="Email"
+          label="Email *"
           type="email"
           value={sender.email}
           onChange={handleChange('email')}
           placeholder="contact@exemple.fr"
           required
         />
+      </div>
 
-        <GlassInput
-          label="SIRET (optionnel)"
-          type="text"
-          value={sender.siret}
-          onChange={handleChange('siret')}
-          placeholder="123 456 789 00012"
-        />
+      {/* Informations avancées */}
+      <div className="sender-advanced-section">
+        <button
+          type="button"
+          className="sender-advanced-toggle"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+        >
+          <span>Informations juridiques et fiscales</span>
+          {showAdvanced ? <FaChevronUp /> : <FaChevronDown />}
+        </button>
+
+        {showAdvanced && (
+          <div className="sender-advanced-content">
+            <div className="sender-form-grid">
+              <GlassInput
+                label="SIREN (9 chiffres)"
+                type="text"
+                value={sender.siren}
+                onChange={handleChange('siren')}
+                placeholder="123 456 789"
+                maxLength={9}
+              />
+
+              <GlassInput
+                label="SIRET complet (14 chiffres)"
+                type="text"
+                value={sender.siret}
+                onChange={handleChange('siret')}
+                placeholder="123 456 789 00012"
+                maxLength={14}
+              />
+
+              <GlassInput
+                label="Numéro RCS"
+                value={sender.rcs}
+                onChange={handleChange('rcs')}
+                placeholder="Ex: RCS Paris B 123 456 789"
+              />
+
+              <GlassInput
+                label="TVA intracommunautaire"
+                value={sender.vatNumber}
+                onChange={handleChange('vatNumber')}
+                placeholder="Ex: FR12345678901"
+              />
+            </div>
+
+            {/* Contact pour réclamations */}
+            <div className="complaints-contact-section">
+              <h3 className="subsection-title">Contact pour réclamations</h3>
+              <p className="subsection-help">
+                Coordonnées dédiées aux réclamations (si différentes des coordonnées principales)
+              </p>
+              <div className="sender-form-grid">
+                <GlassInput
+                  label="Nom / Service"
+                  value={sender.complaintsContact?.name || ''}
+                  onChange={handleComplaintsContactChange('name')}
+                  placeholder="Service client ou nom du responsable"
+                />
+
+                <GlassInput
+                  label="Adresse"
+                  value={sender.complaintsContact?.address || ''}
+                  onChange={handleComplaintsContactChange('address')}
+                  placeholder="Adresse (si différente)"
+                />
+
+                <GlassInput
+                  label="Email"
+                  type="email"
+                  value={sender.complaintsContact?.email || ''}
+                  onChange={handleComplaintsContactChange('email')}
+                  placeholder="reclamations@exemple.fr"
+                />
+
+                <GlassInput
+                  label="Téléphone"
+                  type="tel"
+                  value={sender.complaintsContact?.phone || ''}
+                  onChange={handleComplaintsContactChange('phone')}
+                  placeholder="+33 1 23 45 67 89"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </GlassCard>
   );

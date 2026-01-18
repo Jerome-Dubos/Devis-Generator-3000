@@ -8,9 +8,9 @@
 
 :root {
   /* Couleurs principales */
-  --color-primary: #764ba2;
-  --color-secondary: #667eea;
-  --color-accent: #f093fb;
+  --color-primary: #666666;
+  --color-secondary: #888888;
+  --color-accent: #D4AF37;
   --color-success: #4ECDC4;
   --color-warning: #FFD93D;
   --color-error: #FF6B6B;
@@ -106,14 +106,14 @@ p {
 
 /* Liens */
 a {
-  color: var(--color-primary);
+  color: var(--text-primary);
   text-decoration: none;
   transition: all var(--transition-normal);
   position: relative;
 }
 
 a:hover {
-  color: var(--color-secondary);
+  color: var(--accent-gold, #D4AF37);
   transform: translateY(-1px);
 }
 
@@ -127,7 +127,7 @@ button {
 }
 
 button:focus {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--accent-gold, #D4AF37);
   outline-offset: 2px;
 }
 
@@ -145,8 +145,8 @@ input, textarea, select {
 
 input:focus, textarea:focus, select:focus {
   outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+  border-color: var(--accent-gold, #D4AF37);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
 }
 
 /* Images */
@@ -166,18 +166,18 @@ img {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-primary);
+  background: var(--accent-gold, #D4AF37);
   border-radius: var(--border-radius-sm);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-secondary);
+  background: var(--accent-gold-dark, #B8941F);
 }
 
 /* Sélection de texte */
 ::selection {
-  background: var(--color-primary);
-  color: white;
+  background: var(--accent-gold, #D4AF37);
+  color: var(--text-inverse, white);
 }
 
 /* Utilitaires */
@@ -194,7 +194,7 @@ img {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary), var(--color-accent));
+  background: linear-gradient(135deg, var(--accent-gold, #D4AF37), var(--accent-gold-light, #E8D5A3), var(--accent-gold-dark, #B8941F));
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

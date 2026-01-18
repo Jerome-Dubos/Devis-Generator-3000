@@ -1,15 +1,17 @@
-.quote-details {
+.guarantees {
   width: 100%;
 }
 
-.quote-details-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.guarantees-content {
+  display: flex;
+  flex-direction: column;
   gap: var(--spacing-lg);
 }
 
-.quote-free-checkbox {
-  grid-column: span 3;
+.guarantees-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
   padding: var(--spacing-md);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -30,48 +32,29 @@
   height: 18px;
   cursor: pointer;
   accent-color: var(--accent-gold);
+  flex-shrink: 0;
 }
 
-.checkbox-help {
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  font-style: italic;
-  margin-left: auto;
+.guarantees-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
 }
 
-.quote-payment-conditions {
-  margin-top: var(--spacing-lg);
+.guarantees-textarea {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
 }
 
-.quote-payment-conditions .glass-input {
+.guarantees-textarea .glass-input {
   min-height: 80px;
   resize: vertical;
   font-family: inherit;
 }
 
-@media (max-width: 1024px) {
-  .quote-details-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .quote-free-checkbox {
-    grid-column: 1;
-  }
-
-  .quote-details-textareas {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 768px) {
-  .quote-details-grid {
-    gap: var(--spacing-md);
-  }
-
-  .quote-details-textareas {
+  .guarantees-content {
     gap: var(--spacing-md);
   }
 }

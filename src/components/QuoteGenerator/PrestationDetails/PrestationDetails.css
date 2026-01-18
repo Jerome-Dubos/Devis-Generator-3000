@@ -2,32 +2,103 @@
   width: 100%;
 }
 
-.prestation-details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+.prestation-details-list {
+  display: flex;
+  flex-direction: column;
   gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
 }
 
-.textarea-wrapper {
+.prestation-detail-item {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
 }
 
-.textarea-wrapper .glass-input {
+.prestation-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.remove-section-btn {
+  opacity: 0.7;
+  transition: opacity var(--transition-normal);
+}
+
+.remove-section-btn:hover {
+  opacity: 1;
+}
+
+.prestation-detail-item .glass-input {
   min-height: 120px;
   resize: vertical;
   font-family: inherit;
 }
 
-@media (max-width: 1024px) {
-  .prestation-details-grid {
-    grid-template-columns: 1fr;
-  }
+.prestation-details-add-button {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--spacing-md);
+}
+
+.editable-label-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin: calc(-1 * var(--spacing-xs)) calc(-1 * var(--spacing-sm));
+  border-radius: var(--border-radius-sm);
+  transition: background var(--transition-normal);
+  flex: 1;
+}
+
+.editable-label-wrapper:hover {
+  background: var(--glass-bg-hover);
+}
+
+.editable-label {
+  flex: 1;
+  margin: 0;
+  cursor: pointer;
+}
+
+.editable-label-icon {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.editable-label-wrapper:hover .editable-label-icon {
+  opacity: 1;
+}
+
+.editable-label-input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid var(--glass-gold-border);
+  border-radius: var(--border-radius-md);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  outline: none;
+  box-shadow: var(--shadow-md), var(--glass-gold-glow) 0 0 15px;
 }
 
 @media (max-width: 768px) {
-  .prestation-details-grid {
-    gap: var(--spacing-md);
+  .prestation-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .remove-section-btn {
+    width: 100%;
   }
 }

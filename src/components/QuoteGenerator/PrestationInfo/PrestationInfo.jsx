@@ -19,10 +19,10 @@ const PrestationInfo = () => {
 
       <div className="prestation-form-grid">
         <GlassInput
-          label="Titre de la prestation"
+          label="Titre de la prestation *"
           value={prestation.title}
           onChange={handleChange('title')}
-          placeholder="Ex: Organisation d'événement d'entreprise"
+          placeholder="Ex: Développement d'application web"
           required
         />
 
@@ -34,11 +34,37 @@ const PrestationInfo = () => {
         />
 
         <GlassInput
-          label="Participants"
+          label="Participants / Bénéficiaires"
           value={prestation.participants}
           onChange={handleChange('participants')}
           placeholder="Nombre de participants ou description"
         />
+
+        <GlassInput
+          label="Date de début de la prestation"
+          type="date"
+          value={prestation.startDate}
+          onChange={handleChange('startDate')}
+          placeholder="Date prévue de démarrage"
+        />
+
+        <GlassInput
+          label="Durée estimée"
+          value={prestation.estimatedDuration}
+          onChange={handleChange('estimatedDuration')}
+          placeholder="Ex: 3 mois, 15 jours, 6 semaines"
+        />
+
+        <div className="prestation-delivery-conditions full-width">
+          <label className="glass-input-label">Conditions de livraison / d'exécution</label>
+          <textarea
+            className="glass-input"
+            value={prestation.deliveryConditions || ''}
+            onChange={handleChange('deliveryConditions')}
+            placeholder="Modalités de livraison, lieu d'exécution, délais, étapes de validation, etc."
+            rows={3}
+          />
+        </div>
       </div>
     </GlassCard>
   );

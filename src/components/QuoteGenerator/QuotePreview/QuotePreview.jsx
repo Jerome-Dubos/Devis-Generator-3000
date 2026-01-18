@@ -8,7 +8,7 @@ import './QuotePreview.css';
 const QuotePreview = () => {
   const { quoteData } = useQuote();
   const { theme } = useTheme();
-  const { sender, client, prestation, quoteDetails, lines, prestationDetails, legalConditions } = quoteData;
+  const { sender, client, prestation, quoteDetails, lines, prestationDetails, legalConditions, guarantees, taxSettings } = quoteData;
   const totals = calculateTotals(lines);
 
   // Formater la date en français
@@ -63,6 +63,21 @@ const QuotePreview = () => {
                 <strong>Participants :</strong> {prestation.participants}
               </p>
             )}
+            {prestation.startDate && (
+              <p className="preview-prestation-info">
+                <strong>Date de début :</strong> {formatDate(prestation.startDate)}
+              </p>
+            )}
+            {prestation.estimatedDuration && (
+              <p className="preview-prestation-info">
+                <strong>Durée estimée :</strong> {prestation.estimatedDuration}
+              </p>
+            )}
+            {prestation.deliveryConditions && (
+              <p className="preview-prestation-info">
+                <strong>Conditions de livraison :</strong> {prestation.deliveryConditions}
+              </p>
+            )}
           </div>
         )}
 
@@ -71,6 +86,8 @@ const QuotePreview = () => {
           <div className="preview-sender-info">
             <h3 className="preview-info-title">Émetteur</h3>
             {sender.name && <p className="preview-info-line">{sender.name}</p>}
+            {sender.legalForm && <p className="preview-info-line">{sender.legalForm}</p>}
+            {sender.commercialName && <p className="preview-info-line">Nom commercial : {sender.commercialName}</p>}
             {(sender.address || sender.postalCode || sender.city) && (
               <p className="preview-info-line">
                 {sender.address && `${sender.address}`}
@@ -82,7 +99,10 @@ const QuotePreview = () => {
             )}
             {sender.phone && <p className="preview-info-line">{sender.phone}</p>}
             {sender.email && <p className="preview-info-line">{sender.email}</p>}
+            {sender.siren && <p className="preview-info-line">SIREN : {sender.siren}</p>}
             {sender.siret && <p className="preview-info-line">SIRET : {sender.siret}</p>}
+            {sender.rcs && <p className="preview-info-line">RCS : {sender.rcs}</p>}
+            {sender.vatNumber && <p className="preview-info-line">TVA intracommunautaire : {sender.vatNumber}</p>}
           </div>
 
           <div className="preview-client-info">
@@ -102,7 +122,7 @@ const QuotePreview = () => {
           </div>
         </div>
 
-        {/* Dates */}
+        {/* Dates et informations */}
         <div className="preview-dates-section">
           {quoteDetails.issueDate && (
             <div className="preview-date-item">
@@ -114,6 +134,12 @@ const QuotePreview = () => {
             <div className="preview-date-item">
               <span className="preview-date-label">Date de validité :</span>
               <span className="preview-date-value">{formatDate(quoteDetails.validityDate)}</span>
+            </div>
+          )}
+          {quoteDetails.isFree !== undefined && (
+            <div className="preview-date-item">
+              <span className="preview-date-label">Devis :</span>
+              <span className="preview-date-value">{quoteDetails.isFree !== false ? 'Gratuit' : 'Payant'}</span>
             </div>
           )}
         </div>
@@ -196,64 +222,101 @@ const QuotePreview = () => {
         </div>
 
         {/* Déroulé de la prestation */}
-        {(prestationDetails.petitDejeuner || prestationDetails.plateauxRepas || 
-          prestationDetails.boissons || prestationDetails.serviceLivraison) && (
+        {prestationDetails && prestationDetails.length > 0 && prestationDetails.some(section => section.content) && (
           <div className="preview-prestation-details-section">
             <h3 className="preview-section-title">Déroulé de la Prestation</h3>
             
-            {prestationDetails.petitDejeuner && (
-              <div className="preview-prestation-detail-block">
-                <h4 className="preview-prestation-detail-title">Petit déjeuner</h4>
-                <p className="preview-prestation-detail-text">{prestationDetails.petitDejeuner}</p>
-              </div>
-            )}
-            
-            {prestationDetails.plateauxRepas && (
-              <div className="preview-prestation-detail-block">
-                <h4 className="preview-prestation-detail-title">Plateaux repas</h4>
-                <p className="preview-prestation-detail-text">{prestationDetails.plateauxRepas}</p>
-              </div>
-            )}
-            
-            {prestationDetails.boissons && (
-              <div className="preview-prestation-detail-block">
-                <h4 className="preview-prestation-detail-title">Boissons</h4>
-                <p className="preview-prestation-detail-text">{prestationDetails.boissons}</p>
-              </div>
-            )}
-            
-            {prestationDetails.serviceLivraison && (
-              <div className="preview-prestation-detail-block">
-                <h4 className="preview-prestation-detail-title">Service forfait livraison + rangement</h4>
-                <p className="preview-prestation-detail-text">{prestationDetails.serviceLivraison}</p>
-              </div>
-            )}
+            {prestationDetails.map((section) => {
+              if (!section.content) return null;
+              return (
+                <div key={section.id} className="preview-prestation-detail-block">
+                  <h4 className="preview-prestation-detail-title">{section.label}</h4>
+                  <p className="preview-prestation-detail-text">{section.content}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Conditions de paiement */}
+        {quoteDetails.paymentConditions && (
+          <div className="preview-note-block">
+            <h4 className="preview-note-title">Conditions de paiement</h4>
+            <p className="preview-note-text">{quoteDetails.paymentConditions}</p>
+          </div>
+        )}
+
+        {/* Garanties */}
+        {guarantees && ((guarantees.legalWarranty !== false || guarantees.hiddenDefectsWarranty !== false || guarantees.warrantyDuration || guarantees.afterSalesService)) && (
+          <div className="preview-note-block">
+            <h4 className="preview-note-title">Garanties et Service Après-Vente</h4>
+            <div className="preview-note-text">
+              {guarantees.legalWarranty !== false && (
+                <p>✓ Garantie légale de conformité (obligatoire)</p>
+              )}
+              {guarantees.hiddenDefectsWarranty !== false && (
+                <p>✓ Garantie des vices cachés</p>
+              )}
+              {guarantees.warrantyDuration && (
+                <p><strong>Durée de garantie :</strong> {guarantees.warrantyDuration}</p>
+              )}
+              {guarantees.afterSalesService && (
+                <p><strong>Service après-vente :</strong> {guarantees.afterSalesService}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Contact réclamations */}
+        {sender.complaintsContact && (sender.complaintsContact.name || sender.complaintsContact.email || sender.complaintsContact.phone || sender.complaintsContact.address) && (
+          <div className="preview-note-block">
+            <h4 className="preview-note-title">Contact pour réclamations</h4>
+            <div className="preview-note-text">
+              {sender.complaintsContact.name && <p><strong>{sender.complaintsContact.name}</strong></p>}
+              {sender.complaintsContact.address && <p>{sender.complaintsContact.address}</p>}
+              {sender.complaintsContact.email && <p>Email : {sender.complaintsContact.email}</p>}
+              {sender.complaintsContact.phone && <p>Téléphone : {sender.complaintsContact.phone}</p>}
+            </div>
           </div>
         )}
 
         {/* Conditions légales */}
-        {(legalConditions.accompte || legalConditions.decharge || legalConditions.mentionsLegales) && (
+        {((legalConditions.accompte && (legalConditions.accompte.montant || legalConditions.accompte.solde || legalConditions.accompte.modalites)) ||
+          (legalConditions.decharge && (legalConditions.decharge.date || legalConditions.decharge.delai)) ||
+          (legalConditions.mentionsLegales && legalConditions.mentionsLegales.length > 0)) && (
           <div className="preview-legal-section">
             <h3 className="preview-section-title">Conditions Légales</h3>
             
-            {legalConditions.accompte && (
+            {legalConditions.accompte && (legalConditions.accompte.montant || legalConditions.accompte.solde || legalConditions.accompte.modalites) && (
               <div className="preview-note-block">
                 <h4 className="preview-note-title">Accompte versé</h4>
-                <p className="preview-note-text">{legalConditions.accompte}</p>
+                <p className="preview-note-text">
+                  Un acompte de {legalConditions.accompte.montant || '[montant]'} est requis à la signature du devis. Le solde restant de {legalConditions.accompte.solde || '[solde]'} devra être réglé avant le début de la prestation ou selon les modalités suivantes : {legalConditions.accompte.modalites || '[modalités de paiement]'}.
+                </p>
               </div>
             )}
             
-            {legalConditions.decharge && (
+            {legalConditions.decharge && (legalConditions.decharge.date || legalConditions.decharge.delai) && (
               <div className="preview-note-block">
                 <h4 className="preview-note-title">Décharge de responsabilité après livraison</h4>
-                <p className="preview-note-text">{legalConditions.decharge}</p>
+                <p className="preview-note-text">
+                  Le client reconnaît avoir vérifié la conformité de la prestation livrée le {legalConditions.decharge.date || '[date de livraison]'}. Toute réclamation doit être formulée par écrit dans un délai de {legalConditions.decharge.delai || '[délai en jours]'} jours suivant la livraison. Passé ce délai, la prestation sera considérée comme acceptée sans réserve.
+                </p>
               </div>
             )}
             
-            {legalConditions.mentionsLegales && (
+            {legalConditions.mentionsLegales && legalConditions.mentionsLegales.length > 0 && legalConditions.mentionsLegales.some(m => m.content) && (
               <div className="preview-note-block">
                 <h4 className="preview-note-title">Mentions légales</h4>
-                <p className="preview-note-text">{legalConditions.mentionsLegales}</p>
+                {legalConditions.mentionsLegales.map((mention) => {
+                  if (!mention.content) return null;
+                  return (
+                    <div key={mention.id} className="preview-mention-item">
+                      {mention.title && <h5 className="preview-mention-subtitle">{mention.title}</h5>}
+                      <p className="preview-note-text">{mention.content}</p>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

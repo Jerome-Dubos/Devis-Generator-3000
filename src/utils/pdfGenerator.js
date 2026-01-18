@@ -8,7 +8,7 @@ import { calculateLineTotal, calculateTotals, formatCurrency } from './calculati
  * @param {string} theme - Thème actuel ('light' ou 'dark')
  */
 export const generatePDF = async (quoteData, theme = 'dark') => {
-  const { sender, client, prestation, quoteDetails, lines, prestationDetails, legalConditions } = quoteData;
+  const { sender, client, prestation, quoteDetails, lines, prestationDetails, legalConditions, guarantees, taxSettings } = quoteData;
   const totals = calculateTotals(lines);
 
   // Créer le document PDF en format A4
@@ -154,6 +154,21 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
       doc.text(`Participants : ${prestation.participants}`, margin, yPosition);
       yPosition += 6;
     }
+
+    if (prestation.startDate) {
+      doc.text(`Date de début : ${formatDate(prestation.startDate)}`, margin, yPosition);
+      yPosition += 6;
+    }
+
+    if (prestation.estimatedDuration) {
+      doc.text(`Durée estimée : ${prestation.estimatedDuration}`, margin, yPosition);
+      yPosition += 6;
+    }
+
+    if (prestation.deliveryConditions) {
+      doc.text(`Conditions de livraison : ${prestation.deliveryConditions}`, margin, yPosition);
+      yPosition += 6;
+    }
     yPosition += 5;
   }
 
@@ -175,6 +190,16 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
   if (sender.name) doc.text(sender.name, margin, yPosition);
   yPosition += 5;
 
+  if (sender.legalForm) {
+    doc.text(sender.legalForm, margin, yPosition);
+    yPosition += 5;
+  }
+
+  if (sender.commercialName) {
+    doc.text(`Nom commercial : ${sender.commercialName}`, margin, yPosition);
+    yPosition += 5;
+  }
+
   const senderAddress = [];
   if (sender.address) senderAddress.push(sender.address);
   if (sender.postalCode || sender.city) {
@@ -193,8 +218,20 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
     doc.text(sender.email, margin, yPosition);
     yPosition += 5;
   }
+  if (sender.siren) {
+    doc.text(`SIREN : ${sender.siren}`, margin, yPosition);
+    yPosition += 5;
+  }
   if (sender.siret) {
     doc.text(`SIRET : ${sender.siret}`, margin, yPosition);
+    yPosition += 5;
+  }
+  if (sender.rcs) {
+    doc.text(`RCS : ${sender.rcs}`, margin, yPosition);
+    yPosition += 5;
+  }
+  if (sender.vatNumber) {
+    doc.text(`TVA intracommunautaire : ${sender.vatNumber}`, margin, yPosition);
     yPosition += 5;
   }
 
@@ -237,9 +274,9 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
   yPosition = Math.max(yPosition, infoYStart + 40);
   yPosition += 10;
 
-  // Dates
-  if (quoteDetails.issueDate || quoteDetails.validityDate) {
-    checkPageBreak(15);
+  // Dates et informations
+  if (quoteDetails.issueDate || quoteDetails.validityDate || quoteDetails.isFree !== undefined) {
+    checkPageBreak(20);
     doc.setFontSize(9);
     doc.setTextColor(...colors.textSecondary);
     doc.setFont('helvetica', 'normal');
@@ -250,6 +287,10 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
     }
     if (quoteDetails.validityDate) {
       doc.text(`Date de validité : ${formatDate(quoteDetails.validityDate)}`, margin, yPosition);
+      yPosition += 6;
+    }
+    if (quoteDetails.isFree !== undefined) {
+      doc.text(`Devis : ${quoteDetails.isFree !== false ? 'Gratuit' : 'Payant'}`, margin, yPosition);
       yPosition += 6;
     }
     yPosition += 5;
@@ -351,9 +392,98 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
   doc.text(`${formatCurrencyPDF(totals.totalTTC)} €`, pageWidth - margin, yPosition, { align: 'right' });
   yPosition += 15;
 
+  // Conditions de paiement
+  if (quoteDetails.paymentConditions) {
+    checkPageBreak(30);
+    doc.setFontSize(11);
+    doc.setTextColor(...colors.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CONDITIONS DE PAIEMENT', margin, yPosition);
+    yPosition += 8;
+    doc.setFontSize(9);
+    doc.setTextColor(...colors.textSecondary);
+    doc.setFont('helvetica', 'normal');
+    const paymentLines = doc.splitTextToSize(quoteDetails.paymentConditions, contentWidth);
+    doc.text(paymentLines, margin, yPosition);
+    yPosition += paymentLines.length * 5 + 10;
+  }
+
+  // Garanties
+  if (guarantees && ((guarantees.legalWarranty !== false || guarantees.hiddenDefectsWarranty !== false || guarantees.warrantyDuration || guarantees.afterSalesService))) {
+    checkPageBreak(40);
+    doc.setFontSize(11);
+    doc.setTextColor(...colors.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.text('GARANTIES ET SERVICE APRÈS-VENTE', margin, yPosition);
+    yPosition += 8;
+    doc.setFontSize(9);
+    doc.setTextColor(...colors.textSecondary);
+    doc.setFont('helvetica', 'normal');
+    
+    const guaranteesText = [];
+    if (guarantees.legalWarranty !== false) {
+      guaranteesText.push('• Garantie légale de conformité (obligatoire)');
+    }
+    if (guarantees.hiddenDefectsWarranty !== false) {
+      guaranteesText.push('• Garantie des vices cachés');
+    }
+    if (guarantees.warrantyDuration) {
+      guaranteesText.push(`• Durée de garantie : ${guarantees.warrantyDuration}`);
+    }
+    
+    if (guaranteesText.length > 0) {
+      guaranteesText.forEach((text) => {
+        doc.text(text, margin, yPosition);
+        yPosition += 6;
+      });
+    }
+    
+    if (guarantees.afterSalesService) {
+      yPosition += 3;
+      doc.text('Service après-vente :', margin, yPosition);
+      yPosition += 5;
+      const serviceLines = doc.splitTextToSize(guarantees.afterSalesService, contentWidth);
+      doc.text(serviceLines, margin, yPosition);
+      yPosition += serviceLines.length * 5;
+    }
+    yPosition += 10;
+  }
+
+  // Contact réclamations
+  if (sender.complaintsContact && (sender.complaintsContact.name || sender.complaintsContact.email || sender.complaintsContact.phone || sender.complaintsContact.address)) {
+    checkPageBreak(30);
+    doc.setFontSize(11);
+    doc.setTextColor(...colors.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CONTACT POUR RÉCLAMATIONS', margin, yPosition);
+    yPosition += 8;
+    doc.setFontSize(9);
+    doc.setTextColor(...colors.textSecondary);
+    doc.setFont('helvetica', 'normal');
+    
+    if (sender.complaintsContact.name) {
+      doc.setFont('helvetica', 'bold');
+      doc.text(sender.complaintsContact.name, margin, yPosition);
+      doc.setFont('helvetica', 'normal');
+      yPosition += 6;
+    }
+    if (sender.complaintsContact.address) {
+      doc.text(sender.complaintsContact.address, margin, yPosition);
+      yPosition += 6;
+    }
+    if (sender.complaintsContact.email) {
+      doc.text(`Email : ${sender.complaintsContact.email}`, margin, yPosition);
+      yPosition += 6;
+    }
+    if (sender.complaintsContact.phone) {
+      doc.text(`Téléphone : ${sender.complaintsContact.phone}`, margin, yPosition);
+      yPosition += 6;
+    }
+    yPosition += 10;
+  }
+
   // Déroulé de la prestation (pleine largeur)
-  if (prestationDetails.petitDejeuner || prestationDetails.plateauxRepas || 
-      prestationDetails.boissons || prestationDetails.serviceLivraison) {
+  if (prestationDetails && prestationDetails.length > 0 && prestationDetails.some(section => section.content)) {
     checkPageBreak(80);
     
     doc.setFontSize(11);
@@ -366,58 +496,28 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
     doc.setTextColor(...colors.text);
     doc.setFont('helvetica', 'normal');
 
-    if (prestationDetails.petitDejeuner) {
+    prestationDetails.forEach((section) => {
+      if (!section.content) return;
+      
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...colors.primary);
-      doc.text('Petit déjeuner', margin, yPosition);
+      doc.text(section.label || 'Section', margin, yPosition);
       yPosition += 5;
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textSecondary);
-      const petitDejLines = doc.splitTextToSize(prestationDetails.petitDejeuner, contentWidth);
-      doc.text(petitDejLines, margin, yPosition);
-      yPosition += petitDejLines.length * 5 + 5;
-    }
-
-    if (prestationDetails.plateauxRepas) {
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...colors.primary);
-      doc.text('Plateaux repas', margin, yPosition);
-      yPosition += 5;
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...colors.textSecondary);
-      const plateauxLines = doc.splitTextToSize(prestationDetails.plateauxRepas, contentWidth);
-      doc.text(plateauxLines, margin, yPosition);
-      yPosition += plateauxLines.length * 5 + 5;
-    }
-
-    if (prestationDetails.boissons) {
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...colors.primary);
-      doc.text('Boissons', margin, yPosition);
-      yPosition += 5;
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...colors.textSecondary);
-      const boissonsLines = doc.splitTextToSize(prestationDetails.boissons, contentWidth);
-      doc.text(boissonsLines, margin, yPosition);
-      yPosition += boissonsLines.length * 5 + 5;
-    }
-
-    if (prestationDetails.serviceLivraison) {
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...colors.primary);
-      doc.text('Service forfait livraison + rangement', margin, yPosition);
-      yPosition += 5;
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...colors.textSecondary);
-      const serviceLines = doc.splitTextToSize(prestationDetails.serviceLivraison, contentWidth);
-      doc.text(serviceLines, margin, yPosition);
-      yPosition += serviceLines.length * 5 + 5;
-    }
+      const sectionLines = doc.splitTextToSize(section.content, contentWidth);
+      doc.text(sectionLines, margin, yPosition);
+      yPosition += sectionLines.length * 5 + 5;
+    });
     yPosition += 5;
   }
 
   // Conditions légales (pleine largeur)
-  if (legalConditions.accompte || legalConditions.decharge || legalConditions.mentionsLegales) {
+  const hasAccompte = legalConditions.accompte && (legalConditions.accompte.montant || legalConditions.accompte.solde || legalConditions.accompte.modalites);
+  const hasDecharge = legalConditions.decharge && (legalConditions.decharge.date || legalConditions.decharge.delai);
+  const hasMentions = legalConditions.mentionsLegales && legalConditions.mentionsLegales.length > 0 && legalConditions.mentionsLegales.some(m => m.content);
+
+  if (hasAccompte || hasDecharge || hasMentions) {
     checkPageBreak(60);
     
     doc.setFontSize(11);
@@ -430,40 +530,55 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
     doc.setTextColor(...colors.text);
     doc.setFont('helvetica', 'normal');
 
-    if (legalConditions.accompte) {
+    if (hasAccompte) {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...colors.primary);
       doc.text('Accompte versé', margin, yPosition);
       yPosition += 5;
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textSecondary);
-      const accompteLines = doc.splitTextToSize(legalConditions.accompte, contentWidth);
+      const accompteText = `Un acompte de ${legalConditions.accompte.montant || '[montant]'} est requis à la signature du devis. Le solde restant de ${legalConditions.accompte.solde || '[solde]'} devra être réglé avant le début de la prestation ou selon les modalités suivantes : ${legalConditions.accompte.modalites || '[modalités de paiement]'}.`;
+      const accompteLines = doc.splitTextToSize(accompteText, contentWidth);
       doc.text(accompteLines, margin, yPosition);
       yPosition += accompteLines.length * 5 + 5;
     }
 
-    if (legalConditions.decharge) {
+    if (hasDecharge) {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...colors.primary);
       doc.text('Décharge de responsabilité après livraison', margin, yPosition);
       yPosition += 5;
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textSecondary);
-      const dechargeLines = doc.splitTextToSize(legalConditions.decharge, contentWidth);
+      const dechargeText = `Le client reconnaît avoir vérifié la conformité de la prestation livrée le ${legalConditions.decharge.date || '[date de livraison]'}. Toute réclamation doit être formulée par écrit dans un délai de ${legalConditions.decharge.delai || '[délai en jours]'} jours suivant la livraison. Passé ce délai, la prestation sera considérée comme acceptée sans réserve.`;
+      const dechargeLines = doc.splitTextToSize(dechargeText, contentWidth);
       doc.text(dechargeLines, margin, yPosition);
       yPosition += dechargeLines.length * 5 + 5;
     }
 
-    if (legalConditions.mentionsLegales) {
+    if (hasMentions) {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...colors.primary);
       doc.text('Mentions légales', margin, yPosition);
       yPosition += 5;
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...colors.textSecondary);
-      const mentionsLines = doc.splitTextToSize(legalConditions.mentionsLegales, contentWidth);
-      doc.text(mentionsLines, margin, yPosition);
-      yPosition += mentionsLines.length * 5;
+      
+      legalConditions.mentionsLegales.forEach((mention) => {
+        if (!mention.content) return;
+        if (mention.title) {
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(...colors.primary);
+          doc.text(mention.title, margin, yPosition);
+          yPosition += 5;
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(...colors.textSecondary);
+        }
+        const mentionLines = doc.splitTextToSize(mention.content, contentWidth);
+        doc.text(mentionLines, margin, yPosition);
+        yPosition += mentionLines.length * 5 + 5;
+      });
+      yPosition -= 5;
     }
   }
 

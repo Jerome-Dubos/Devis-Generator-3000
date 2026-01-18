@@ -4,6 +4,7 @@ import { calculateLineTotal, calculateTotals, formatCurrency } from '../../../ut
 import GlassCard from '../../GlassCard/GlassCard';
 import GlassInput from '../../GlassInput/GlassInput';
 import GlassButton from '../../GlassButton/GlassButton';
+import VATSelector from '../VATSelector/VATSelector';
 import { FaPlus, FaTrash } from 'react-icons/fa';
 import './QuoteLines.css';
 
@@ -37,18 +38,10 @@ const QuoteLines = () => {
           <h2 className="section-title">Lignes de Devis</h2>
           <p className="section-subtitle">Ajoutez les prestations et services</p>
         </div>
-        <GlassButton
-          variant="primary"
-          size="sm"
-          onClick={handleAddLine}
-          icon={<FaPlus />}
-          iconPosition="left"
-        >
-          Ajouter une ligne
-        </GlassButton>
       </div>
 
-      <div className="quote-lines-list">
+      <div className="quote-lines-container">
+        <div className="quote-lines-list">
         {lines.map((line, index) => {
           const lineTotalHT = calculateLineTotal(line.quantity, line.unitPrice);
 
@@ -102,15 +95,10 @@ const QuoteLines = () => {
                   required
                 />
 
-                <GlassInput
+                <VATSelector
                   label="TVA (%)"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
                   value={line.vat}
                   onChange={handleLineChange(line.id, 'vat')}
-                  placeholder="20"
                   required
                 />
 
@@ -124,6 +112,20 @@ const QuoteLines = () => {
             </div>
           );
         })}
+        </div>
+        
+        {/* Bouton flottant pour ajouter une ligne */}
+        <div className="quote-lines-add-button-sticky">
+          <GlassButton
+            variant="primary"
+            size="sm"
+            onClick={handleAddLine}
+            icon={<FaPlus />}
+            iconPosition="left"
+          >
+            Ajouter une ligne
+          </GlassButton>
+        </div>
       </div>
 
       {/* Totaux */}
