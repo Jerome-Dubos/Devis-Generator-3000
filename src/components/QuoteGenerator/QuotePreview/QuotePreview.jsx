@@ -183,10 +183,10 @@ const QuotePreview = () => {
                           {lineType === 'choice' ? '-' : (line.unitPrice ? formatCurrency(line.unitPrice) : '-')}
                         </td>
                         <td className="preview-td preview-td-vat">
-                          {line.vat ? formatPercentage(line.vat) : '-'}
+                          {lineType === 'choice' ? '-' : (line.vat ? formatPercentage(line.vat) : '-')}
                         </td>
                         <td className="preview-td preview-td-total">
-                          {formatCurrency(lineTotalHT)}
+                          {lineType === 'choice' ? '-' : formatCurrency(lineTotalHT)}
                         </td>
                       </tr>
                       {hasChoices && line.choices.map((choice) => {
@@ -194,13 +194,15 @@ const QuotePreview = () => {
                         return (
                           <tr key={choice.id} className="preview-tr preview-tr-choice">
                             <td className="preview-td preview-td-description">
-                              <span style={{ paddingLeft: '20px' }}>→ {choice.description}</span>
+                              <span style={{ paddingLeft: '20px' }}>• {choice.description}</span>
                             </td>
                             <td className="preview-td preview-td-qty">-</td>
                             <td className="preview-td preview-td-price">
                               {choice.unitPrice ? formatCurrency(choice.unitPrice) : '-'}
                             </td>
-                            <td className="preview-td preview-td-vat">-</td>
+                            <td className="preview-td preview-td-vat">
+                              {line.vat ? formatPercentage(line.vat) : '-'}
+                            </td>
                             <td className="preview-td preview-td-total">
                               {formatCurrency(choiceTotalHT)}
                             </td>

@@ -26,6 +26,12 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
     background: theme === 'light' ? [248, 246, 240] : [10, 10, 10],
     backgroundLight: theme === 'light' ? [255, 255, 255] : [20, 20, 20],
     border: theme === 'light' ? [212, 175, 55, 0.3] : [212, 175, 55, 0.4],
+    // Couleurs pour le tableau
+    tableRowEven: theme === 'light' ? [255, 253, 248] : [30, 30, 30],
+    tableRowOdd: theme === 'light' ? [250, 248, 243] : [35, 35, 35],
+    choiceRow: theme === 'light' ? [248, 246, 240] : [40, 40, 40],
+    choiceMainLine: theme === 'light' ? [242, 240, 235] : [28, 28, 28],
+    choiceBorder: [212, 175, 55],
   };
 
   // Appliquer la couleur de fond de page selon le thème
@@ -301,6 +307,9 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
     checkPageBreak(50);
 
     const tableData = [];
+    const rowStyles = []; // Pour stocker les styles par ligne
+    const choiceRowIndices = []; // Indices des lignes de choix
+    
     lines.forEach((line, index) => {
       const lineType = line.type || 'normal';
       const lineTotalHT = calculateLineTotal(line.quantity, line.unitPrice, line.choices);
@@ -311,25 +320,51 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
       if (lineType === 'normal' && line.longDescription) {
         descriptionText += '\n' + line.longDescription;
       }
+      
+      const mainRowIndex = tableData.length;
+      const isChoiceMainLine = lineType === 'choice';
+      
       tableData.push([
         descriptionText,
         lineType === 'choice' ? '-' : String(line.quantity || '-'),
         lineType === 'choice' ? '-' : (line.unitPrice ? `${formatCurrencyPDF(line.unitPrice)} €` : '-'),
-        line.vat ? `${line.vat} %` : '-',
-        `${formatCurrencyPDF(lineTotalHT)} €`,
+        isChoiceMainLine ? '-' : (line.vat ? `${line.vat} %` : '-'),
+        isChoiceMainLine ? '-' : `${formatCurrencyPDF(lineTotalHT)} €`,
       ]);
+
+      // Style pour la ligne principale (alternance de couleurs)
+      const isEvenRow = mainRowIndex % 2 === 0;
+      const normalFillColor = isEvenRow ? colors.tableRowEven : colors.tableRowOdd;
+      const choiceMainFillColor = colors.choiceMainLine;
+      
+      rowStyles[mainRowIndex] = {
+        fillColor: isChoiceMainLine ? choiceMainFillColor : normalFillColor,
+        fontStyle: isChoiceMainLine ? 'bold' : 'normal',
+        textColor: isChoiceMainLine ? colors.primary : colors.text, // Couleur dorée pour les titres de choix
+      };
 
       // Sous-lignes pour les choix
       if (hasChoices) {
-        line.choices.forEach((choice) => {
+        line.choices.forEach((choice, choiceIndex) => {
+          const choiceRowIndex = tableData.length;
+          choiceRowIndices.push(choiceRowIndex);
           const choiceTotalHT = calculateLineTotal(1, choice.unitPrice);
+          
           tableData.push([
-        `  → ${choice.description}`,
+            `  • ${choice.description}`,
             '-',
             choice.unitPrice ? `${formatCurrencyPDF(choice.unitPrice)} €` : '-',
-            '-',
+            line.vat ? `${line.vat} %` : '-', // TVA de la ligne parente
             `${formatCurrencyPDF(choiceTotalHT)} €`,
           ]);
+
+          // Style pour les lignes de choix (fond avec couleur dorée subtile)
+          rowStyles[choiceRowIndex] = {
+            fillColor: colors.choiceRow,
+            fontStyle: 'normal',
+            textColor: colors.text,
+            fontSize: 8.5, // Texte légèrement plus petit pour les choix
+          };
         });
       }
     });
@@ -338,32 +373,75 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
       startY: yPosition,
       head: [['Désignation', 'Qté', 'PU HT', 'TVA', 'Total HT']],
       body: tableData,
-      theme: 'striped',
+      theme: 'plain', // On utilise 'plain' pour avoir plus de contrôle
       headStyles: {
         fillColor: colors.primary,
         textColor: [255, 255, 255],
         fontStyle: 'bold',
         fontSize: 9,
+        halign: 'center',
+        valign: 'middle',
       },
       bodyStyles: {
         textColor: colors.text,
         fontSize: 9,
-      },
-      alternateRowStyles: {
-        fillColor: theme === 'light' ? [248, 246, 240] : [18, 18, 18],
+        valign: 'middle',
       },
       columnStyles: {
-        0: { cellWidth: 'auto' }, // Désignation
-        1: { halign: 'center', cellWidth: 20 }, // Quantité
-        2: { halign: 'right', cellWidth: 35 }, // PU HT
-        3: { halign: 'center', cellWidth: 25 }, // TVA
-        4: { halign: 'right', cellWidth: 35, textColor: colors.primary, fontStyle: 'bold' }, // Total HT
+        0: { cellWidth: 'auto', halign: 'left', valign: 'middle' }, // Désignation
+        1: { cellWidth: 20, halign: 'center', valign: 'middle' }, // Quantité
+        2: { cellWidth: 35, halign: 'right', valign: 'middle' }, // PU HT
+        3: { cellWidth: 25, halign: 'center', valign: 'middle' }, // TVA
+        4: { cellWidth: 35, halign: 'right', valign: 'middle' }, // Total HT
       },
       margin: { left: margin, right: margin },
       styles: {
         fillColor: theme === 'dark' ? [15, 15, 15] : [255, 255, 255],
         lineColor: colors.border,
         lineWidth: 0.5,
+        valign: 'middle',
+        cellPadding: { top: 5, bottom: 5, left: 3, right: 3 },
+      },
+      didParseCell: function(data) {
+        // Appliquer les styles par ligne
+        if (data.row.index >= 0) {
+          const rowStyle = rowStyles[data.row.index];
+          if (rowStyle) {
+            if (rowStyle.fillColor) {
+              data.cell.styles.fillColor = rowStyle.fillColor;
+            }
+            if (rowStyle.fontStyle) {
+              data.cell.styles.fontStyle = rowStyle.fontStyle;
+            }
+            if (rowStyle.textColor) {
+              data.cell.styles.textColor = rowStyle.textColor;
+            }
+            if (rowStyle.fontSize) {
+              data.cell.styles.fontSize = rowStyle.fontSize;
+            }
+          }
+          
+          // Style spécial pour la colonne Total HT (sauf pour les choix)
+          if (data.column.index === 4 && !choiceRowIndices.includes(data.row.index)) {
+            data.cell.styles.textColor = colors.primary;
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      },
+      didDrawCell: function(data) {
+        // Ajouter une bordure gauche dorée pour les lignes de choix
+        if (data.row.index >= 0 && choiceRowIndices.includes(data.row.index)) {
+          if (data.column.index === 0) {
+            doc.setDrawColor(...colors.choiceBorder);
+            doc.setLineWidth(2.5);
+            doc.line(
+              data.cell.x + 3,
+              data.cell.y,
+              data.cell.x + 3,
+              data.cell.y + data.cell.height
+            );
+          }
+        }
       },
     });
 
