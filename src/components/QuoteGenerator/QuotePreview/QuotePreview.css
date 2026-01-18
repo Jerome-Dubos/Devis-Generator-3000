@@ -239,6 +239,16 @@
   background: var(--glass-bg);
 }
 
+.preview-tr-choice {
+  background: var(--glass-bg);
+  opacity: 0.9;
+}
+
+.preview-tr-choice .preview-td {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
 .preview-td {
   padding: var(--spacing-md);
   color: var(--text-primary);
@@ -247,6 +257,15 @@
 
 .preview-td-description {
   font-weight: 500;
+}
+
+.preview-td-description-detail {
+  margin-top: var(--spacing-xs);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: normal;
+  font-style: italic;
+  line-height: 1.5;
 }
 
 .preview-td-qty {

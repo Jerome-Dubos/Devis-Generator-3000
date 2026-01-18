@@ -1,4 +1,11 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import {
+  getAllProfiles,
+  saveProfile,
+  deleteProfile,
+  getProfileById,
+  createProfileFromSender,
+} from '../utils/senderProfiles';
 
 const QuoteContext = createContext();
 
@@ -284,9 +291,12 @@ export const QuoteProvider = ({ children }) => {
     const newLine = {
       id: uniqueId,
       description: '',
+      type: 'normal', // 'normal' ou 'choice'
       quantity: 1,
       unitPrice: 0,
       vat: 20, // TVA par défaut à 20%
+      choices: [], // Pour les lignes de type 'choice'
+      longDescription: '', // Description détaillée pour les lignes normales
     };
     setQuoteData((prev) => ({
       ...prev,
@@ -307,8 +317,67 @@ export const QuoteProvider = ({ children }) => {
   const updateLine = useCallback((lineId, field, value) => {
     setQuoteData((prev) => ({
       ...prev,
+      lines: prev.lines.map((line) => {
+        if (line.id !== lineId) return line;
+        // Si on change le type, réinitialiser les champs inappropriés
+        if (field === 'type') {
+          if (value === 'choice') {
+            return { ...line, [field]: value, quantity: undefined, unitPrice: undefined, choices: line.choices || [] };
+          } else {
+            return { ...line, [field]: value, quantity: line.quantity || 1, unitPrice: line.unitPrice || 0, choices: [] };
+          }
+        }
+        return { ...line, [field]: value };
+      }),
+    }));
+  }, []);
+
+  // Ajouter un choix à une ligne
+  const addChoice = useCallback((lineId) => {
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const newChoice = {
+      id: uniqueId,
+      description: '',
+      unitPrice: 0,
+    };
+    setQuoteData((prev) => ({
+      ...prev,
       lines: prev.lines.map((line) =>
-        line.id === lineId ? { ...line, [field]: value } : line
+        line.id === lineId
+          ? { ...line, choices: [...(line.choices || []), newChoice] }
+          : line
+      ),
+    }));
+    return newChoice.id;
+  }, []);
+
+  // Supprimer un choix d'une ligne
+  const removeChoice = useCallback((lineId, choiceId) => {
+    setQuoteData((prev) => ({
+      ...prev,
+      lines: prev.lines.map((line) =>
+        line.id === lineId
+          ? { ...line, choices: (line.choices || []).filter((choice) => choice.id !== choiceId) }
+          : line
+      ),
+    }));
+  }, []);
+
+  // Mettre à jour un choix d'une ligne
+  const updateChoice = useCallback((lineId, choiceId, field, value) => {
+    setQuoteData((prev) => ({
+      ...prev,
+      lines: prev.lines.map((line) =>
+        line.id === lineId
+          ? {
+              ...line,
+              choices: (line.choices || []).map((choice) =>
+                choice.id === choiceId
+                  ? { ...choice, [field]: field === 'unitPrice' ? (parseFloat(value) || 0) : value }
+                  : choice
+              ),
+            }
+          : line
       ),
     }));
   }, []);
@@ -335,6 +404,40 @@ export const QuoteProvider = ({ children }) => {
     }
   }, [quoteData.quoteDetails.quoteNumber, generateQuoteNumber, updateQuoteDetails]);
 
+  // Fonctions de gestion des profils d'entreprise
+  const loadSenderProfiles = useCallback(() => {
+    return getAllProfiles();
+  }, []);
+
+  const loadSenderProfile = useCallback((profileId) => {
+    const profile = getProfileById(profileId);
+    if (profile) {
+      // Charger les données du profil dans le devis actuel
+      setQuoteData((prev) => ({
+        ...prev,
+        sender: {
+          ...prev.sender,
+          ...profile.sender,
+          logo: null, // Le logo n'est pas sauvegardé, seulement logoUrl
+        },
+      }));
+      return true;
+    }
+    return false;
+  }, []);
+
+  const saveSenderProfile = useCallback((profileName, profileId = null) => {
+    const profileData = createProfileFromSender(quoteData.sender, profileName);
+    if (profileId) {
+      profileData.id = profileId;
+    }
+    return saveProfile(profileData);
+  }, [quoteData.sender]);
+
+  const removeSenderProfile = useCallback((profileId) => {
+    deleteProfile(profileId);
+  }, []);
+
   const value = {
     quoteData,
     updateSender,
@@ -354,9 +457,16 @@ export const QuoteProvider = ({ children }) => {
     addLine,
     removeLine,
     updateLine,
+    addChoice,
+    removeChoice,
+    updateChoice,
     resetQuote,
     generateQuoteNumber,
     initializeQuoteNumber,
+    loadSenderProfiles,
+    loadSenderProfile,
+    saveSenderProfile,
+    removeSenderProfile,
   };
 
   return (

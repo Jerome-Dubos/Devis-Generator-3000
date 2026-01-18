@@ -100,6 +100,88 @@
   opacity: 1;
 }
 
+.quote-line-type-selector {
+  margin-bottom: var(--spacing-md);
+}
+
+.quote-line-type-selector select {
+  width: 100%;
+  padding: var(--spacing-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-md);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: all var(--transition-normal);
+}
+
+.quote-line-type-selector select:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+.quote-line-placeholder {
+  /* Placeholder pour maintenir la grille */
+}
+
+.quote-line-long-description {
+  margin-top: var(--spacing-md);
+  grid-column: 1 / -1;
+}
+
+.quote-line-long-description textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.quote-line-choices {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-md);
+}
+
+.quote-line-choices-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.quote-line-choice {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: var(--spacing-md);
+  align-items: end;
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-md);
+}
+
+.quote-line-choice:last-child {
+  margin-bottom: 0;
+}
+
+.remove-choice-btn {
+  opacity: 0.7;
+  transition: opacity var(--transition-normal);
+  height: fit-content;
+}
+
+.remove-choice-btn:hover {
+  opacity: 1;
+}
+
+.quote-line-choices-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: var(--spacing-md);
+}
+
 .quote-line-grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
@@ -252,5 +334,15 @@
 
   .quote-line-total {
     grid-column: 1;
+  }
+
+  .quote-line-choice {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-line-choices-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
   }
 }

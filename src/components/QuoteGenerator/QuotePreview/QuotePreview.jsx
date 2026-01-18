@@ -159,23 +159,55 @@ const QuotePreview = () => {
               </thead>
               <tbody>
                 {lines.map((line, index) => {
-                  const lineTotalHT = calculateLineTotal(line.quantity, line.unitPrice);
+                  const lineType = line.type || 'normal';
+                  const lineTotalHT = calculateLineTotal(line.quantity, line.unitPrice, line.choices);
+                  const hasChoices = lineType === 'choice' && line.choices && line.choices.length > 0;
+                  
                   return (
-                    <tr key={line.id} className="preview-tr">
-                      <td className="preview-td preview-td-description">
-                        {line.description || `Ligne ${index + 1}`}
-                      </td>
-                      <td className="preview-td preview-td-qty">{line.quantity || '-'}</td>
-                      <td className="preview-td preview-td-price">
-                        {line.unitPrice ? formatCurrency(line.unitPrice) : '-'}
-                      </td>
-                      <td className="preview-td preview-td-vat">
-                        {line.vat ? formatPercentage(line.vat) : '-'}
-                      </td>
-                      <td className="preview-td preview-td-total">
-                        {formatCurrency(lineTotalHT)}
-                      </td>
-                    </tr>
+                    <React.Fragment key={line.id}>
+                      <tr className="preview-tr">
+                        <td className="preview-td preview-td-description">
+                          <div>
+                            {line.description || `Ligne ${index + 1}`}
+                            {lineType === 'normal' && line.longDescription && (
+                              <div className="preview-td-description-detail">
+                                {line.longDescription}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="preview-td preview-td-qty">
+                          {lineType === 'choice' ? '-' : (line.quantity || '-')}
+                        </td>
+                        <td className="preview-td preview-td-price">
+                          {lineType === 'choice' ? '-' : (line.unitPrice ? formatCurrency(line.unitPrice) : '-')}
+                        </td>
+                        <td className="preview-td preview-td-vat">
+                          {line.vat ? formatPercentage(line.vat) : '-'}
+                        </td>
+                        <td className="preview-td preview-td-total">
+                          {formatCurrency(lineTotalHT)}
+                        </td>
+                      </tr>
+                      {hasChoices && line.choices.map((choice) => {
+                        const choiceTotalHT = calculateLineTotal(1, choice.unitPrice);
+                        return (
+                          <tr key={choice.id} className="preview-tr preview-tr-choice">
+                            <td className="preview-td preview-td-description">
+                              <span style={{ paddingLeft: '20px' }}>→ {choice.description}</span>
+                            </td>
+                            <td className="preview-td preview-td-qty">-</td>
+                            <td className="preview-td preview-td-price">
+                              {choice.unitPrice ? formatCurrency(choice.unitPrice) : '-'}
+                            </td>
+                            <td className="preview-td preview-td-vat">-</td>
+                            <td className="preview-td preview-td-total">
+                              {formatCurrency(choiceTotalHT)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </React.Fragment>
                   );
                 })}
               </tbody>

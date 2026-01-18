@@ -1,16 +1,31 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useQuote } from '../../../contexts/QuoteContext';
 import GlassCard from '../../GlassCard/GlassCard';
 import GlassInput from '../../GlassInput/GlassInput';
 import GlassButton from '../../GlassButton/GlassButton';
-import { FaUpload, FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaUpload, FaTimes, FaChevronDown, FaChevronUp, FaSave, FaFolderOpen, FaTrash, FaEdit } from 'react-icons/fa';
 import './SenderInfo.css';
 
 const SenderInfo = () => {
-  const { quoteData, updateSender, updateLogo } = useQuote();
+  const { quoteData, updateSender, updateLogo, loadSenderProfiles, loadSenderProfile, saveSenderProfile, removeSenderProfile } = useQuote();
   const { sender } = quoteData;
-  const [showAdvanced, setShowAdvanced] = React.useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showProfiles, setShowProfiles] = useState(false);
+  const [profiles, setProfiles] = useState([]);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [editingProfileId, setEditingProfileId] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Charger les profils au montage
+  useEffect(() => {
+    refreshProfiles();
+  }, []);
+
+  const refreshProfiles = () => {
+    const allProfiles = loadSenderProfiles();
+    setProfiles(allProfiles);
+  };
 
   const handleChange = (field) => (e) => {
     updateSender(field, e.target.value);
@@ -37,6 +52,40 @@ const SenderInfo = () => {
     }
   };
 
+  const handleLoadProfile = (profileId) => {
+    loadSenderProfile(profileId);
+    setShowProfiles(false);
+  };
+
+  const handleSaveProfile = () => {
+    if (profileName.trim()) {
+      saveSenderProfile(profileName.trim(), editingProfileId);
+      setShowSaveModal(false);
+      setProfileName('');
+      setEditingProfileId(null);
+      refreshProfiles();
+    }
+  };
+
+  const handleDeleteProfile = (profileId) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce profil ?')) {
+      removeSenderProfile(profileId);
+      refreshProfiles();
+    }
+  };
+
+  const handleEditProfile = (profile) => {
+    setProfileName(profile.name);
+    setEditingProfileId(profile.id);
+    setShowSaveModal(true);
+  };
+
+  const handleNewProfile = () => {
+    setProfileName('');
+    setEditingProfileId(null);
+    setShowSaveModal(true);
+  };
+
   const legalForms = [
     'SARL',
     'SAS',
@@ -53,8 +102,142 @@ const SenderInfo = () => {
 
   return (
     <GlassCard variant="gold" className="sender-info">
-      <h2 className="section-title">Vos Informations</h2>
-      <p className="section-subtitle">Renseignez les informations de votre entreprise</p>
+      <div className="sender-info-header">
+        <div>
+          <h2 className="section-title">Vos Informations</h2>
+          <p className="section-subtitle">Renseignez les informations de votre entreprise</p>
+        </div>
+        <div className="sender-info-actions">
+          <GlassButton
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowProfiles(!showProfiles)}
+            icon={<FaFolderOpen />}
+            iconPosition="left"
+          >
+            Profils ({profiles.length})
+          </GlassButton>
+          <GlassButton
+            variant="primary"
+            size="sm"
+            onClick={handleNewProfile}
+            icon={<FaSave />}
+            iconPosition="left"
+          >
+            Enregistrer ce profil
+          </GlassButton>
+        </div>
+      </div>
+
+      {/* Panneau de gestion des profils */}
+      {showProfiles && (
+        <div className="sender-profiles-panel">
+          <div className="sender-profiles-header">
+            <h3 className="subsection-title">Profils d'entreprise sauvegardés</h3>
+            <button
+              type="button"
+              onClick={() => setShowProfiles(false)}
+              className="profiles-close-btn"
+              aria-label="Fermer"
+            >
+              <FaTimes />
+            </button>
+          </div>
+          {profiles.length === 0 ? (
+            <p className="profiles-empty">Aucun profil sauvegardé</p>
+          ) : (
+            <div className="profiles-list">
+              {profiles.map((profile) => (
+                <div key={profile.id} className="profile-item">
+                  <div className="profile-item-info">
+                    <span className="profile-name">{profile.name}</span>
+                    {profile.updatedAt && (
+                      <span className="profile-date">
+                        Modifié le {new Date(profile.updatedAt).toLocaleDateString('fr-FR')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="profile-item-actions">
+                    <GlassButton
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleLoadProfile(profile.id)}
+                      icon={<FaFolderOpen />}
+                    >
+                      Charger
+                    </GlassButton>
+                    <GlassButton
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditProfile(profile)}
+                      icon={<FaEdit />}
+                    >
+                      Renommer
+                    </GlassButton>
+                    <GlassButton
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteProfile(profile.id)}
+                      icon={<FaTrash />}
+                    >
+                      Supprimer
+                    </GlassButton>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal de sauvegarde */}
+      {showSaveModal && (
+        <div className="modal-overlay" onClick={() => setShowSaveModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{editingProfileId ? 'Renommer le profil' : 'Enregistrer un nouveau profil'}</h3>
+              <button
+                type="button"
+                onClick={() => setShowSaveModal(false)}
+                className="modal-close-btn"
+                aria-label="Fermer"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <div className="modal-body">
+              <GlassInput
+                label="Nom du profil"
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+                placeholder="Ex: Mon entreprise principale"
+                required
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && profileName.trim()) {
+                    handleSaveProfile();
+                  }
+                }}
+              />
+            </div>
+            <div className="modal-footer">
+              <GlassButton
+                variant="ghost"
+                onClick={() => setShowSaveModal(false)}
+              >
+                Annuler
+              </GlassButton>
+              <GlassButton
+                variant="primary"
+                onClick={handleSaveProfile}
+                disabled={!profileName.trim()}
+              >
+                {editingProfileId ? 'Renommer' : 'Enregistrer'}
+              </GlassButton>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Upload Logo */}
       <div className="logo-upload-section">

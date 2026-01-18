@@ -1,11 +1,19 @@
 /**
  * Calcule le total HT d'une ligne de devis
- * @param {number} quantity - Quantité
- * @param {number} unitPrice - Prix unitaire HT
+ * @param {number} quantity - Quantité (pour type normal)
+ * @param {number} unitPrice - Prix unitaire HT (pour type normal)
+ * @param {Array} choices - Tableau de choix (pour type choice)
  * @returns {number} Total HT de la ligne
  */
-export const calculateLineTotal = (quantity, unitPrice) => {
-  return parseFloat((quantity * unitPrice).toFixed(2));
+export const calculateLineTotal = (quantity, unitPrice, choices) => {
+  // Si c'est une ligne avec choix, calculer la somme des prix des choix
+  if (choices && Array.isArray(choices) && choices.length > 0) {
+    return parseFloat(
+      choices.reduce((sum, choice) => sum + (parseFloat(choice.unitPrice) || 0), 0).toFixed(2)
+    );
+  }
+  // Sinon, calculer normalement avec quantité et prix unitaire
+  return parseFloat(((parseFloat(quantity) || 0) * (parseFloat(unitPrice) || 0)).toFixed(2));
 };
 
 /**
@@ -44,8 +52,9 @@ export const calculateTotals = (lines) => {
     const quantity = parseFloat(line.quantity) || 0;
     const unitPrice = parseFloat(line.unitPrice) || 0;
     const vatRate = parseFloat(line.vat) || 0;
+    const choices = line.choices || [];
 
-    const lineTotalHT = calculateLineTotal(quantity, unitPrice);
+    const lineTotalHT = calculateLineTotal(quantity, unitPrice, choices);
     const lineVAT = calculateVAT(lineTotalHT, vatRate);
     const lineTotalTTC = calculateLineTotalTTC(lineTotalHT, vatRate);
 

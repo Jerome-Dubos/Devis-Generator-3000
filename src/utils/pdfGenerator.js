@@ -300,15 +300,38 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
   if (lines.length > 0) {
     checkPageBreak(50);
 
-    const tableData = lines.map((line, index) => {
-      const lineTotalHT = calculateLineTotal(line.quantity, line.unitPrice);
-      return [
-        line.description || `Ligne ${index + 1}`,
-        String(line.quantity || '-'),
-        line.unitPrice ? `${formatCurrencyPDF(line.unitPrice)} €` : '-',
+    const tableData = [];
+    lines.forEach((line, index) => {
+      const lineType = line.type || 'normal';
+      const lineTotalHT = calculateLineTotal(line.quantity, line.unitPrice, line.choices);
+      const hasChoices = lineType === 'choice' && line.choices && line.choices.length > 0;
+
+      // Ligne principale
+      let descriptionText = line.description || `Ligne ${index + 1}`;
+      if (lineType === 'normal' && line.longDescription) {
+        descriptionText += '\n' + line.longDescription;
+      }
+      tableData.push([
+        descriptionText,
+        lineType === 'choice' ? '-' : String(line.quantity || '-'),
+        lineType === 'choice' ? '-' : (line.unitPrice ? `${formatCurrencyPDF(line.unitPrice)} €` : '-'),
         line.vat ? `${line.vat} %` : '-',
         `${formatCurrencyPDF(lineTotalHT)} €`,
-      ];
+      ]);
+
+      // Sous-lignes pour les choix
+      if (hasChoices) {
+        line.choices.forEach((choice) => {
+          const choiceTotalHT = calculateLineTotal(1, choice.unitPrice);
+          tableData.push([
+        `  → ${choice.description}`,
+            '-',
+            choice.unitPrice ? `${formatCurrencyPDF(choice.unitPrice)} €` : '-',
+            '-',
+            `${formatCurrencyPDF(choiceTotalHT)} €`,
+          ]);
+        });
+      }
     });
 
     autoTable(doc, {

@@ -9,16 +9,23 @@ import { FaPlus, FaTrash } from 'react-icons/fa';
 import './QuoteLines.css';
 
 const QuoteLines = () => {
-  const { quoteData, addLine, removeLine, updateLine } = useQuote();
+  const { quoteData, addLine, removeLine, updateLine, addChoice, removeChoice, updateChoice } = useQuote();
   const { lines } = quoteData;
 
   const totals = calculateTotals(lines);
 
   const handleLineChange = (lineId, field) => (e) => {
-    const value = field === 'quantity' || field === 'unitPrice' || field === 'vat'
-      ? parseFloat(e.target.value) || 0
+    const value = field === 'quantity' || field === 'unitPrice' || field === 'vat' || field === 'type'
+      ? (field === 'type' ? e.target.value : parseFloat(e.target.value) || 0)
       : e.target.value;
     updateLine(lineId, field, value);
+  };
+
+  const handleChoiceChange = (lineId, choiceId, field) => (e) => {
+    const value = field === 'unitPrice'
+      ? parseFloat(e.target.value) || 0
+      : e.target.value;
+    updateChoice(lineId, choiceId, field, value);
   };
 
   const handleAddLine = () => {
@@ -29,6 +36,14 @@ const QuoteLines = () => {
     if (lines.length > 1) {
       removeLine(lineId);
     }
+  };
+
+  const handleAddChoice = (lineId) => {
+    addChoice(lineId);
+  };
+
+  const handleRemoveChoice = (lineId, choiceId) => {
+    removeChoice(lineId, choiceId);
   };
 
   return (
@@ -43,7 +58,11 @@ const QuoteLines = () => {
       <div className="quote-lines-container">
         <div className="quote-lines-list">
         {lines.map((line, index) => {
-          const lineTotalHT = calculateLineTotal(line.quantity, line.unitPrice);
+          // Rétrocompatibilité : si type n'existe pas, c'est une ligne normale
+          const lineType = line.type || 'normal';
+          // S'assurer que choices existe pour éviter les erreurs
+          const lineChoices = line.choices || [];
+          const lineTotalHT = calculateLineTotal(line.quantity, line.unitPrice, lineChoices);
 
           return (
             <div key={line.id} className="quote-line">
@@ -62,38 +81,59 @@ const QuoteLines = () => {
                 )}
               </div>
 
+              <div className="quote-line-type-selector">
+                <label className="glass-input-label">Type de ligne</label>
+                <select
+                  className="glass-input"
+                  value={lineType}
+                  onChange={handleLineChange(line.id, 'type')}
+                >
+                  <option value="normal">Ligne normale (quantité + prix)</option>
+                  <option value="choice">Ligne avec choix (plusieurs options)</option>
+                </select>
+              </div>
+
               <div className="quote-line-grid">
                 <div className="quote-line-description">
                   <GlassInput
                     label="Désignation"
                     value={line.description}
                     onChange={handleLineChange(line.id, 'description')}
-                    placeholder="Désignation du produit/service"
+                    placeholder={lineType === 'choice' ? "Ex: Entrée" : "Désignation du produit/service"}
                     required
                   />
                 </div>
 
-                <GlassInput
-                  label="Quantité"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={line.quantity}
-                  onChange={handleLineChange(line.id, 'quantity')}
-                  placeholder="1"
-                  required
-                />
+                {lineType === 'normal' ? (
+                  <>
+                    <GlassInput
+                      label="Quantité"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={line.quantity || ''}
+                      onChange={handleLineChange(line.id, 'quantity')}
+                      placeholder="1"
+                      required
+                    />
 
-                <GlassInput
-                  label="PU HT (€)"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={line.unitPrice}
-                  onChange={handleLineChange(line.id, 'unitPrice')}
-                  placeholder="0.00"
-                  required
-                />
+                    <GlassInput
+                      label="PU HT (€)"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={line.unitPrice || ''}
+                      onChange={handleLineChange(line.id, 'unitPrice')}
+                      placeholder="0.00"
+                      required
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="quote-line-placeholder"></div>
+                    <div className="quote-line-placeholder"></div>
+                  </>
+                )}
 
                 <VATSelector
                   label="TVA (%)"
@@ -109,6 +149,78 @@ const QuoteLines = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Description détaillée pour les lignes normales */}
+              {lineType === 'normal' && (
+                <div className="quote-line-long-description">
+                  <label htmlFor={`long-desc-${line.id}`} className="glass-input-label">
+                    Description détaillée (optionnel)
+                  </label>
+                  <textarea
+                    id={`long-desc-${line.id}`}
+                    className="glass-input"
+                    value={line.longDescription || ''}
+                    onChange={handleLineChange(line.id, 'longDescription')}
+                    placeholder="Description détaillée du produit/service..."
+                    rows={3}
+                  />
+                </div>
+              )}
+
+              {/* Section des choix pour les lignes de type 'choice' */}
+              {lineType === 'choice' && (
+                <div className="quote-line-choices">
+                  <div className="quote-line-choices-header">
+                    <label className="glass-input-label">Choix disponibles</label>
+                    <GlassButton
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleAddChoice(line.id)}
+                      icon={<FaPlus />}
+                      iconPosition="left"
+                    >
+                      Ajouter un choix
+                    </GlassButton>
+                  </div>
+                  {lineChoices.map((choice, choiceIndex) => (
+                    <div key={choice.id} className="quote-line-choice">
+                      <GlassInput
+                        label={`Choix ${choiceIndex + 1}`}
+                        value={choice.description}
+                        onChange={handleChoiceChange(line.id, choice.id, 'description')}
+                        placeholder="Description du choix"
+                        required
+                      />
+                      <GlassInput
+                        label="PU HT (€)"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={choice.unitPrice || ''}
+                        onChange={handleChoiceChange(line.id, choice.id, 'unitPrice')}
+                        placeholder="0.00"
+                        required
+                      />
+                      {lineChoices.length > 1 && (
+                        <GlassButton
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveChoice(line.id, choice.id)}
+                          icon={<FaTrash />}
+                          className="remove-choice-btn"
+                        >
+                          Supprimer
+                        </GlassButton>
+                      )}
+                    </div>
+                  ))}
+                  {lineChoices.length === 0 && (
+                    <p className="quote-line-choices-empty">
+                      Aucun choix défini. Cliquez sur "Ajouter un choix" pour commencer.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
