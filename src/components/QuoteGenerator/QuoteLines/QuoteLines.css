@@ -151,7 +151,7 @@
 
 .quote-line-choice {
   display: grid;
-  grid-template-columns: 2fr 1fr auto;
+  grid-template-columns: 2fr 1fr 1fr 1fr auto;
   gap: var(--spacing-md);
   align-items: end;
   margin-bottom: var(--spacing-md);
@@ -211,6 +211,84 @@
   flex-direction: column;
   gap: var(--spacing-sm);
   padding-top: calc(var(--spacing-md) + 4px);
+}
+
+.quote-line-total-quantity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding-top: calc(var(--spacing-md) + 4px);
+}
+
+.line-total-quantity-display {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+  padding: var(--spacing-md);
+  background: var(--glass-bg);
+  border-radius: var(--border-radius-md);
+  text-align: center;
+}
+
+.quote-line-choice-total {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.choice-total-display {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+  padding: var(--spacing-sm);
+  background: var(--glass-bg);
+  border-radius: var(--border-radius-md);
+  text-align: center;
+}
+
+.quote-line-personnel {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-md);
+}
+
+.quote-line-personnel-header {
+  margin-bottom: var(--spacing-md);
+}
+
+.quote-line-personnel-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.quote-line-personnel-item {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--spacing-md);
+  align-items: end;
+  padding: var(--spacing-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-md);
+}
+
+.quote-line-personnel-total {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.personnel-total-display {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+  padding: var(--spacing-sm);
+  background: var(--glass-bg);
+  border-radius: var(--border-radius-md);
+  text-align: center;
 }
 
 .line-total-display {
@@ -337,6 +415,14 @@
   }
 
   .quote-line-choice {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-line-total-quantity {
+    grid-column: 1 / -1;
+  }
+
+  .quote-line-personnel-item {
     grid-template-columns: 1fr;
   }
 

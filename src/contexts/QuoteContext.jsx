@@ -322,9 +322,36 @@ export const QuoteProvider = ({ children }) => {
         // Si on change le type, réinitialiser les champs inappropriés
         if (field === 'type') {
           if (value === 'choice') {
-            return { ...line, [field]: value, quantity: undefined, unitPrice: undefined, choices: line.choices || [] };
+            return { ...line, [field]: value, quantity: undefined, unitPrice: undefined, choices: line.choices || [], personnel: undefined };
+          } else if (value === 'personnel') {
+            // Initialiser avec les valeurs par défaut pour le personnel
+            const defaultPersonnel = {
+              serveurs: { quantity: 4, unitPrice: 0 },
+              cuisiniers: { quantity: 4, unitPrice: 0 },
+              barman: { quantity: 1, unitPrice: 0 },
+            };
+            return { 
+              ...line, 
+              [field]: value, 
+              quantity: undefined, 
+              unitPrice: undefined, 
+              choices: [], 
+              personnel: line.personnel || defaultPersonnel,
+              description: line.description || 'Personnel',
+            };
+          } else if (value === 'table') {
+            return { 
+              ...line, 
+              [field]: value, 
+              quantity: line.quantity || 1, 
+              unitPrice: line.unitPrice || 150, 
+              choices: [], 
+              personnel: undefined,
+              description: line.description || 'Déco dressage',
+              longDescription: line.longDescription || 'Nappe, serviettes, photophore, dragées, déco',
+            };
           } else {
-            return { ...line, [field]: value, quantity: line.quantity || 1, unitPrice: line.unitPrice || 0, choices: [] };
+            return { ...line, [field]: value, quantity: line.quantity || 1, unitPrice: line.unitPrice || 0, choices: [], personnel: undefined };
           }
         }
         return { ...line, [field]: value };
@@ -338,6 +365,7 @@ export const QuoteProvider = ({ children }) => {
     const newChoice = {
       id: uniqueId,
       description: '',
+      quantity: 1,
       unitPrice: 0,
     };
     setQuoteData((prev) => ({
@@ -373,7 +401,7 @@ export const QuoteProvider = ({ children }) => {
               ...line,
               choices: (line.choices || []).map((choice) =>
                 choice.id === choiceId
-                  ? { ...choice, [field]: field === 'unitPrice' ? (parseFloat(value) || 0) : value }
+                  ? { ...choice, [field]: (field === 'unitPrice' || field === 'quantity') ? (parseFloat(value) || 0) : value }
                   : choice
               ),
             }

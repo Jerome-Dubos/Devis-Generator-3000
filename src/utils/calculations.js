@@ -3,17 +3,55 @@
  * @param {number} quantity - Quantité (pour type normal)
  * @param {number} unitPrice - Prix unitaire HT (pour type normal)
  * @param {Array} choices - Tableau de choix (pour type choice)
+ * @param {Object} personnel - Objet personnel (pour type personnel)
  * @returns {number} Total HT de la ligne
  */
-export const calculateLineTotal = (quantity, unitPrice, choices) => {
-  // Si c'est une ligne avec choix, calculer la somme des prix des choix
+export const calculateLineTotal = (quantity, unitPrice, choices, personnel) => {
+  // Si c'est une ligne avec choix, calculer la somme des prix des choix (quantité × prix unitaire pour chaque choix)
   if (choices && Array.isArray(choices) && choices.length > 0) {
     return parseFloat(
-      choices.reduce((sum, choice) => sum + (parseFloat(choice.unitPrice) || 0), 0).toFixed(2)
+      choices.reduce((sum, choice) => {
+        // Rétrocompatibilité : si quantity n'existe pas, utiliser 1 pour le calcul
+        const choiceQuantityRaw = parseFloat(choice.quantity);
+        const choiceQuantity = isNaN(choiceQuantityRaw) ? 1 : choiceQuantityRaw;
+        const choiceUnitPrice = parseFloat(choice.unitPrice) || 0;
+        return sum + (choiceQuantity * choiceUnitPrice);
+      }, 0).toFixed(2)
+    );
+  }
+  // Si c'est une ligne avec personnel, calculer la somme des prix du personnel
+  if (personnel && typeof personnel === 'object' && Object.keys(personnel).length > 0) {
+    return parseFloat(
+      Object.values(personnel).reduce((sum, item) => {
+        const itemQuantity = parseFloat(item.quantity) || 0;
+        const itemUnitPrice = parseFloat(item.unitPrice) || 0;
+        return sum + (itemQuantity * itemUnitPrice);
+      }, 0).toFixed(2)
     );
   }
   // Sinon, calculer normalement avec quantité et prix unitaire
-  return parseFloat(((parseFloat(quantity) || 0) * (parseFloat(unitPrice) || 0)).toFixed(2));
+  // S'assurer que les valeurs sont bien numériques
+  const qty = parseFloat(quantity);
+  const price = parseFloat(unitPrice);
+  // Ne pas utiliser 0 si les valeurs sont NaN, utiliser les valeurs brutes ou 0
+  const calculatedQty = isNaN(qty) ? 0 : qty;
+  const calculatedPrice = isNaN(price) ? 0 : price;
+  const calculatedTotal = calculatedQty * calculatedPrice;
+  return parseFloat(calculatedTotal.toFixed(2));
+};
+
+/**
+ * Calcule la quantité totale d'une ligne avec choix
+ * @param {Array} choices - Tableau de choix
+ * @returns {number} Quantité totale
+ */
+export const calculateLineTotalQuantity = (choices) => {
+  if (!choices || !Array.isArray(choices) || choices.length === 0) {
+    return 0;
+  }
+  return parseFloat(
+    choices.reduce((sum, choice) => sum + (parseFloat(choice.quantity) || 0), 0).toFixed(2)
+  );
 };
 
 /**
@@ -53,8 +91,9 @@ export const calculateTotals = (lines) => {
     const unitPrice = parseFloat(line.unitPrice) || 0;
     const vatRate = parseFloat(line.vat) || 0;
     const choices = line.choices || [];
+    const personnel = line.personnel || {};
 
-    const lineTotalHT = calculateLineTotal(quantity, unitPrice, choices);
+    const lineTotalHT = calculateLineTotal(quantity, unitPrice, choices, personnel);
     const lineVAT = calculateVAT(lineTotalHT, vatRate);
     const lineTotalTTC = calculateLineTotalTTC(lineTotalHT, vatRate);
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuote } from '../../../contexts/QuoteContext';
-import { calculateLineTotal, calculateTotals, formatCurrency } from '../../../utils/calculations';
+import { calculateLineTotal, calculateTotals, formatCurrency, calculateLineTotalQuantity } from '../../../utils/calculations';
 import GlassCard from '../../GlassCard/GlassCard';
 import GlassInput from '../../GlassInput/GlassInput';
 import GlassButton from '../../GlassButton/GlassButton';
@@ -15,6 +15,10 @@ const QuoteLines = () => {
   const totals = calculateTotals(lines);
 
   const handleLineChange = (lineId, field) => (e) => {
+    if (field === 'personnel') {
+      // Géré directement dans le composant personnel
+      return;
+    }
     const value = field === 'quantity' || field === 'unitPrice' || field === 'vat' || field === 'type'
       ? (field === 'type' ? e.target.value : parseFloat(e.target.value) || 0)
       : e.target.value;
@@ -22,7 +26,7 @@ const QuoteLines = () => {
   };
 
   const handleChoiceChange = (lineId, choiceId, field) => (e) => {
-    const value = field === 'unitPrice'
+    const value = (field === 'unitPrice' || field === 'quantity')
       ? parseFloat(e.target.value) || 0
       : e.target.value;
     updateChoice(lineId, choiceId, field, value);
@@ -62,7 +66,9 @@ const QuoteLines = () => {
           const lineType = line.type || 'normal';
           // S'assurer que choices existe pour éviter les erreurs
           const lineChoices = line.choices || [];
-          const lineTotalHT = calculateLineTotal(line.quantity, line.unitPrice, lineChoices);
+          const linePersonnel = line.personnel || {};
+          const lineTotalHT = calculateLineTotal(line.quantity, line.unitPrice, lineChoices, linePersonnel);
+          const lineTotalQuantity = lineType === 'choice' ? calculateLineTotalQuantity(lineChoices) : (line.quantity || 0);
 
           return (
             <div key={line.id} className="quote-line">
@@ -90,6 +96,8 @@ const QuoteLines = () => {
                 >
                   <option value="normal">Ligne normale (quantité + prix)</option>
                   <option value="choice">Ligne avec choix (plusieurs options)</option>
+                  <option value="table">Déco dressage (par table)</option>
+                  <option value="personnel">Personnel</option>
                 </select>
               </div>
 
@@ -99,12 +107,17 @@ const QuoteLines = () => {
                     label="Désignation"
                     value={line.description}
                     onChange={handleLineChange(line.id, 'description')}
-                    placeholder={lineType === 'choice' ? "Ex: Entrée" : "Désignation du produit/service"}
+                    placeholder={
+                      lineType === 'choice' ? "Ex: Entrée" :
+                      lineType === 'table' ? "Déco dressage" :
+                      lineType === 'personnel' ? "Personnel" :
+                      "Désignation du produit/service"
+                    }
                     required
                   />
                 </div>
 
-                {lineType === 'normal' ? (
+                {lineType === 'normal' || lineType === 'table' ? (
                   <>
                     <GlassInput
                       label="Quantité"
@@ -113,7 +126,7 @@ const QuoteLines = () => {
                       step="0.01"
                       value={line.quantity || ''}
                       onChange={handleLineChange(line.id, 'quantity')}
-                      placeholder="1"
+                      placeholder={lineType === 'table' ? "Nombre de tables" : "1"}
                       required
                     />
 
@@ -124,9 +137,24 @@ const QuoteLines = () => {
                       step="0.01"
                       value={line.unitPrice || ''}
                       onChange={handleLineChange(line.id, 'unitPrice')}
-                      placeholder="0.00"
+                      placeholder={lineType === 'table' ? "150.00" : "0.00"}
                       required
                     />
+                  </>
+                ) : lineType === 'choice' ? (
+                  <>
+                    <div className="quote-line-total-quantity">
+                      <label className="glass-input-label">Quantité totale</label>
+                      <div className="line-total-quantity-display">
+                        {lineTotalQuantity}
+                      </div>
+                    </div>
+                    <div className="quote-line-placeholder"></div>
+                  </>
+                ) : lineType === 'personnel' ? (
+                  <>
+                    <div className="quote-line-placeholder"></div>
+                    <div className="quote-line-placeholder"></div>
                   </>
                 ) : (
                   <>
@@ -147,23 +175,100 @@ const QuoteLines = () => {
                   <div className="line-total-display">
                     {formatCurrency(lineTotalHT)}
                   </div>
+                  {lineType === 'choice' && (
+                    <div className="line-total-ttc-display" style={{ marginTop: '4px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                      TTC: {formatCurrency(lineTotalHT * (1 + (line.vat || 0) / 100))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Description détaillée pour les lignes normales */}
-              {lineType === 'normal' && (
+              {/* Description détaillée pour les lignes normales et table */}
+              {(lineType === 'normal' || lineType === 'table') && (
                 <div className="quote-line-long-description">
                   <label htmlFor={`long-desc-${line.id}`} className="glass-input-label">
-                    Description détaillée (optionnel)
+                    Description détaillée {lineType === 'table' ? '(nappe, serviettes, photophore, dragées, déco)' : '(optionnel)'}
                   </label>
                   <textarea
                     id={`long-desc-${line.id}`}
                     className="glass-input"
                     value={line.longDescription || ''}
                     onChange={handleLineChange(line.id, 'longDescription')}
-                    placeholder="Description détaillée du produit/service..."
+                    placeholder={lineType === 'table' ? "Nappe, serviettes, photophore, dragées, déco" : "Description détaillée du produit/service..."}
                     rows={3}
                   />
+                </div>
+              )}
+
+              {/* Section personnel pour les lignes de type 'personnel' */}
+              {lineType === 'personnel' && (
+                <div className="quote-line-personnel">
+                  <div className="quote-line-personnel-header">
+                    <label className="glass-input-label">Personnel</label>
+                  </div>
+                  <div className="quote-line-personnel-items">
+                    {[
+                      { key: 'serveurs', label: 'Serveurs', defaultQuantity: 4 },
+                      { key: 'cuisiniers', label: 'Cuisiniers', defaultQuantity: 4 },
+                      { key: 'barman', label: 'Barman', defaultQuantity: 1 },
+                    ].map((item) => {
+                      const personnelData = line.personnel || {};
+                      const quantity = personnelData[item.key]?.quantity ?? item.defaultQuantity;
+                      const unitPrice = personnelData[item.key]?.unitPrice || 0;
+                      const totalHT = quantity * unitPrice;
+                      
+                      return (
+                        <div key={item.key} className="quote-line-personnel-item">
+                          <GlassInput
+                            label={item.label}
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={quantity}
+                            onChange={(e) => {
+                              const newQuantity = parseFloat(e.target.value) || 0;
+                              updateLine(line.id, 'personnel', {
+                                ...personnelData,
+                                [item.key]: {
+                                  ...personnelData[item.key],
+                                  quantity: newQuantity,
+                                  unitPrice: personnelData[item.key]?.unitPrice || 0,
+                                },
+                              });
+                            }}
+                            placeholder={item.defaultQuantity.toString()}
+                            required
+                          />
+                          <GlassInput
+                            label="PU HT (€)"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={unitPrice}
+                            onChange={(e) => {
+                              const newUnitPrice = parseFloat(e.target.value) || 0;
+                              updateLine(line.id, 'personnel', {
+                                ...personnelData,
+                                [item.key]: {
+                                  ...personnelData[item.key],
+                                  quantity: quantity,
+                                  unitPrice: newUnitPrice,
+                                },
+                              });
+                            }}
+                            placeholder="0.00"
+                            required
+                          />
+                          <div className="quote-line-personnel-total">
+                            <label className="glass-input-label">Total HT</label>
+                            <div className="personnel-total-display">
+                              {formatCurrency(totalHT)}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -182,38 +287,57 @@ const QuoteLines = () => {
                       Ajouter un choix
                     </GlassButton>
                   </div>
-                  {lineChoices.map((choice, choiceIndex) => (
-                    <div key={choice.id} className="quote-line-choice">
-                      <GlassInput
-                        label={`Choix ${choiceIndex + 1}`}
-                        value={choice.description}
-                        onChange={handleChoiceChange(line.id, choice.id, 'description')}
-                        placeholder="Description du choix"
-                        required
-                      />
-                      <GlassInput
-                        label="PU HT (€)"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={choice.unitPrice || ''}
-                        onChange={handleChoiceChange(line.id, choice.id, 'unitPrice')}
-                        placeholder="0.00"
-                        required
-                      />
-                      {lineChoices.length > 1 && (
-                        <GlassButton
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveChoice(line.id, choice.id)}
-                          icon={<FaTrash />}
-                          className="remove-choice-btn"
-                        >
-                          Supprimer
-                        </GlassButton>
-                      )}
-                    </div>
-                  ))}
+                  {lineChoices.map((choice, choiceIndex) => {
+                    const choiceTotalHT = (parseFloat(choice.quantity) || 0) * (parseFloat(choice.unitPrice) || 0);
+                    return (
+                      <div key={choice.id} className="quote-line-choice">
+                        <GlassInput
+                          label={`Choix ${choiceIndex + 1}`}
+                          value={choice.description}
+                          onChange={handleChoiceChange(line.id, choice.id, 'description')}
+                          placeholder="Description du choix"
+                          required
+                        />
+                        <GlassInput
+                          label="Quantité"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={choice.quantity || ''}
+                          onChange={handleChoiceChange(line.id, choice.id, 'quantity')}
+                          placeholder="1"
+                          required
+                        />
+                        <GlassInput
+                          label="PU HT (€)"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={choice.unitPrice || ''}
+                          onChange={handleChoiceChange(line.id, choice.id, 'unitPrice')}
+                          placeholder="0.00"
+                          required
+                        />
+                        <div className="quote-line-choice-total">
+                          <label className="glass-input-label">Total HT</label>
+                          <div className="choice-total-display">
+                            {formatCurrency(choiceTotalHT)}
+                          </div>
+                        </div>
+                        {lineChoices.length > 1 && (
+                          <GlassButton
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveChoice(line.id, choice.id)}
+                            icon={<FaTrash />}
+                            className="remove-choice-btn"
+                          >
+                            Supprimer
+                          </GlassButton>
+                        )}
+                      </div>
+                    );
+                  })}
                   {lineChoices.length === 0 && (
                     <p className="quote-line-choices-empty">
                       Aucun choix défini. Cliquez sur "Ajouter un choix" pour commencer.

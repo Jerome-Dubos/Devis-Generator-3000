@@ -312,24 +312,65 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
     
     lines.forEach((line, index) => {
       const lineType = line.type || 'normal';
-      const lineTotalHT = calculateLineTotal(line.quantity, line.unitPrice, line.choices);
-      const hasChoices = lineType === 'choice' && line.choices && line.choices.length > 0;
+      const lineChoices = line.choices || [];
+      const linePersonnel = line.personnel || {};
+      
+      // Calculer le total HT AVANT toute condition
+      const lineTotalHT = calculateLineTotal(line.quantity, line.unitPrice, lineChoices, linePersonnel);
+      
+      const hasChoices = lineType === 'choice' && lineChoices.length > 0;
+      const hasPersonnel = lineType === 'personnel' && Object.keys(linePersonnel).length > 0;
 
       // Ligne principale
       let descriptionText = line.description || `Ligne ${index + 1}`;
-      if (lineType === 'normal' && line.longDescription) {
+      if ((lineType === 'normal' || lineType === 'table') && line.longDescription) {
         descriptionText += '\n' + line.longDescription;
       }
       
       const mainRowIndex = tableData.length;
       const isChoiceMainLine = lineType === 'choice';
+      const isPersonnelMainLine = lineType === 'personnel';
+      const isTableLine = lineType === 'table';
+      
+      // Calculer la quantité totale pour les lignes de type choice
+      let displayQuantity = '-';
+      let displayUnitPrice = '-';
+      let displayVAT = '-';
+      let displayTotalHT = '-';
+      
+      if (lineType === 'choice' && hasChoices) {
+        // La ligne principale doit être vide pour les choix
+        displayQuantity = '-';
+        displayUnitPrice = '-';
+        displayVAT = '-';
+        displayTotalHT = '-';
+      } else if (lineType === 'normal' || lineType === 'table') {
+        displayQuantity = String(line.quantity || '-');
+        displayUnitPrice = line.unitPrice ? `${formatCurrencyPDF(line.unitPrice)} €` : '-';
+        displayVAT = line.vat ? `${line.vat} %` : '-';
+        // S'assurer que le total HT est calculé correctement
+        // lineTotalHT est déjà calculé avec calculateLineTotal
+        displayTotalHT = lineTotalHT > 0 ? `${formatCurrencyPDF(lineTotalHT)} €` : (lineTotalHT === 0 ? '0,00 €' : `${formatCurrencyPDF(Math.abs(lineTotalHT))} €`);
+      } else if (lineType === 'personnel' && hasPersonnel) {
+        // La ligne principale doit être vide pour le personnel
+        displayQuantity = '-';
+        displayUnitPrice = '-';
+        displayVAT = '-';
+        displayTotalHT = '-';
+      } else {
+        // Pour les autres cas (lignes normales sans données), initialiser les valeurs
+        displayQuantity = String(line.quantity || '-');
+        displayUnitPrice = line.unitPrice ? `${formatCurrencyPDF(line.unitPrice)} €` : '-';
+        displayVAT = line.vat ? `${line.vat} %` : '-';
+        displayTotalHT = lineTotalHT > 0 ? `${formatCurrencyPDF(lineTotalHT)} €` : '0,00 €';
+      }
       
       tableData.push([
         descriptionText,
-        lineType === 'choice' ? '-' : String(line.quantity || '-'),
-        lineType === 'choice' ? '-' : (line.unitPrice ? `${formatCurrencyPDF(line.unitPrice)} €` : '-'),
-        isChoiceMainLine ? '-' : (line.vat ? `${line.vat} %` : '-'),
-        isChoiceMainLine ? '-' : `${formatCurrencyPDF(lineTotalHT)} €`,
+        displayQuantity,
+        displayUnitPrice,
+        displayVAT,
+        displayTotalHT,
       ]);
 
       // Style pour la ligne principale (alternance de couleurs)
@@ -338,22 +379,28 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
       const choiceMainFillColor = colors.choiceMainLine;
       
       rowStyles[mainRowIndex] = {
-        fillColor: isChoiceMainLine ? choiceMainFillColor : normalFillColor,
-        fontStyle: isChoiceMainLine ? 'bold' : 'normal',
-        textColor: isChoiceMainLine ? colors.primary : colors.text, // Couleur dorée pour les titres de choix
+        fillColor: (isChoiceMainLine || isPersonnelMainLine) ? choiceMainFillColor : normalFillColor,
+        fontStyle: (isChoiceMainLine || isPersonnelMainLine) ? 'bold' : 'normal',
+        textColor: (isChoiceMainLine || isPersonnelMainLine) ? colors.primary : colors.text, // Couleur dorée pour les titres de choix
       };
 
       // Sous-lignes pour les choix
       if (hasChoices) {
-        line.choices.forEach((choice, choiceIndex) => {
+        lineChoices.forEach((choice, choiceIndex) => {
           const choiceRowIndex = tableData.length;
           choiceRowIndices.push(choiceRowIndex);
-          const choiceTotalHT = calculateLineTotal(1, choice.unitPrice);
+          // Rétrocompatibilité : si quantity n'existe pas, afficher '-' ou utiliser 1
+          const choiceQuantity = parseFloat(choice.quantity);
+          const choiceQuantityDisplay = isNaN(choiceQuantity) ? '-' : String(choiceQuantity);
+          const choiceUnitPrice = parseFloat(choice.unitPrice) || 0;
+          // Pour le calcul, utiliser 1 si quantity n'existe pas (rétrocompatibilité)
+          const choiceQuantityForCalc = isNaN(choiceQuantity) ? 1 : choiceQuantity;
+          const choiceTotalHT = choiceQuantityForCalc * choiceUnitPrice;
           
           tableData.push([
             `  • ${choice.description}`,
-            '-',
-            choice.unitPrice ? `${formatCurrencyPDF(choice.unitPrice)} €` : '-',
+            choiceQuantityDisplay,
+            choiceUnitPrice ? `${formatCurrencyPDF(choiceUnitPrice)} €` : '-',
             line.vat ? `${line.vat} %` : '-', // TVA de la ligne parente
             `${formatCurrencyPDF(choiceTotalHT)} €`,
           ]);
@@ -366,6 +413,85 @@ export const generatePDF = async (quoteData, theme = 'dark') => {
             fontSize: 8.5, // Texte légèrement plus petit pour les choix
           };
         });
+        
+        // Ligne de total APRÈS les choix détaillés
+        const choiceTotalQuantity = lineChoices.reduce((sum, choice) => {
+          const qty = parseFloat(choice.quantity);
+          return sum + (isNaN(qty) ? 0 : qty);
+        }, 0);
+        const choiceTotalVAT = lineTotalHT * ((parseFloat(line.vat) || 0) / 100);
+        const choiceTotalTTC = lineTotalHT + choiceTotalVAT;
+        
+        const choiceTotalRowIndex = tableData.length;
+        tableData.push([
+          `  Total ${line.description || ''}`,
+          choiceTotalQuantity > 0 ? String(choiceTotalQuantity) : '-',
+          '-',
+          line.vat ? `${line.vat} %` : '-',
+          `${formatCurrencyPDF(lineTotalHT)} €`,
+        ]);
+        rowStyles[choiceTotalRowIndex] = {
+          fillColor: colors.choiceMainLine,
+          fontStyle: 'bold',
+          textColor: colors.primary,
+          fontSize: 9,
+        };
+      }
+
+      // Sous-lignes pour le personnel
+      if (hasPersonnel) {
+        Object.entries(linePersonnel).forEach(([key, item]) => {
+          // Ne pas afficher si la quantité est 0 et le prix est 0 (option non utilisée)
+          const personnelQuantity = parseFloat(item.quantity) || 0;
+          const personnelUnitPrice = parseFloat(item.unitPrice) || 0;
+          
+          // Afficher même si quantité ou prix est 0 pour permettre la saisie
+          const personnelRowIndex = tableData.length;
+          const personnelTotalHT = personnelQuantity * personnelUnitPrice;
+          
+          const labelMap = {
+            serveurs: 'Serveurs',
+            cuisiniers: 'Cuisiniers',
+            barman: 'Barman',
+          };
+          
+          tableData.push([
+            `  • ${labelMap[key] || key}`,
+            String(personnelQuantity),
+            personnelUnitPrice ? `${formatCurrencyPDF(personnelUnitPrice)} €` : '-',
+            line.vat ? `${line.vat} %` : '-',
+            `${formatCurrencyPDF(personnelTotalHT)} €`,
+          ]);
+
+          rowStyles[personnelRowIndex] = {
+            fillColor: colors.choiceRow,
+            fontStyle: 'normal',
+            textColor: colors.text,
+            fontSize: 8.5,
+          };
+        });
+        
+        // Ligne de total APRÈS les détails du personnel
+        const personnelTotalQuantity = Object.values(linePersonnel).reduce((sum, item) => {
+          return sum + (parseFloat(item.quantity) || 0);
+        }, 0);
+        const personnelTotalVAT = lineTotalHT * ((parseFloat(line.vat) || 0) / 100);
+        const personnelTotalTTC = lineTotalHT + personnelTotalVAT;
+        
+        const personnelTotalRowIndex = tableData.length;
+        tableData.push([
+          `  Total ${line.description || 'Personnel'}`,
+          personnelTotalQuantity > 0 ? String(personnelTotalQuantity) : '-',
+          '-',
+          line.vat ? `${line.vat} %` : '-',
+          `${formatCurrencyPDF(lineTotalHT)} €`,
+        ]);
+        rowStyles[personnelTotalRowIndex] = {
+          fillColor: colors.choiceMainLine,
+          fontStyle: 'bold',
+          textColor: colors.primary,
+          fontSize: 9,
+        };
       }
     });
 
